@@ -54,18 +54,8 @@ namespace Bank
         static void SetupConsole()
         {
             // Got from here -> https://stackoverflow.com/questions/38533903/set-c-sharp-console-application-to-unicode-output
-            var cmd = new Process
-            {
-                StartInfo =
-                {
-                    FileName = "cmd.exe",
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                }
-            };
             
+            /*
             var note = new Process
             {
                 StartInfo =
@@ -83,15 +73,27 @@ namespace Bank
                 FileName = "www.google.com",
                 UseShellExecute = true
             };
-            cmd.Start();
+            
             note.Start();
             Process.Start(webTest);
             note.StandardInput.WriteLine("Hehehehehehehheheheheh");
             note.StandardInput.Flush();
             //note.StandardInput.Close();
-            
+            */
             
             // Required 
+            var cmd = new Process
+            {
+                StartInfo =
+                {
+                    FileName = "cmd.exe",
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                }
+            };
+            cmd.Start();
             cmd.StandardInput.WriteLine("chcp 65001");
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
