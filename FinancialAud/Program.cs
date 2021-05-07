@@ -11,7 +11,7 @@ using Bank.Logs;
 
 namespace Bank
 {
-    class Program
+    static class Program
     {
         static void Main(string[] args)
         {
@@ -24,9 +24,6 @@ namespace Bank
             {
                 test.ProcessTransactionLogs(args[0]);
                 Console.WriteLine(test.PrintFinalState());
-                Console.WriteLine();
-                Console.Write("Press any key to continue...");
-                Console.ReadKey(true);
             }
             else
             {
@@ -43,12 +40,10 @@ namespace Bank
                 
                 test.ProcessTransactionLogs(fileName);
                 Console.WriteLine(test.PrintFinalState());
-            
-                Console.WriteLine();
-                Console.Write("Press any key to continue...");
-                Console.ReadKey(true);
             }
-            
+            Console.WriteLine();
+            Console.Write("Press any key to continue...");
+            Console.ReadKey(true);
         }
 
         static void SetupConsole()
