@@ -1,5 +1,10 @@
-﻿namespace Bank.Accounts
+﻿
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("AccountTests")]
+namespace Bank.Accounts
 {
+    
     public abstract class Account
     {
         //Account(decimal, uint);
@@ -32,7 +37,7 @@
             private set;
         }
 
-        public Account()
+         public Account()
         {
             _cents = 0;
             _centPrecision = 1000000000;
@@ -146,10 +151,7 @@
 
         public abstract bool PostInterest(decimal bankPrimeRate);
 
-        public virtual void EndPosting()
-        {
-            InterestPosted = false;
-        }
+        public virtual void EndPosting() => InterestPosted = false;
 
         public decimal GetBalance() 
         {

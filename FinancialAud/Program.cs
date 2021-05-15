@@ -17,8 +17,10 @@ namespace Bank
         {
             SetupConsole();
             
-            var test = new Bank();
             
+            
+            var test = new Bank();
+            //Console.WriteLine(test.PriceString(12345678904324));
 
             if (args.Length > 0 && args[0] != null)
             {
@@ -44,6 +46,7 @@ namespace Bank
             Console.WriteLine();
             Console.Write("Press any key to continue...");
             Console.ReadKey(true);
+            
         }
 
         static void SetupConsole()

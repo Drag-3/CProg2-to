@@ -1,10 +1,19 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Data;
+using System.IO;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Mime;
 using System.Runtime.CompilerServices;
+using System.Text;
+using Bank.Extentions;
+
 
 namespace Bank.Logs
 {
+
     using System.IO;
 
     public struct Transaction
@@ -20,19 +29,26 @@ namespace Bank.Logs
         public string customerName;
     }
 
+    
+
+    public enum MyFileType
+    {
+        InputFile,
+        DetailFile,
+        ErrorFile
+    }
+
     public class TransactionLog
     {
         //public static string WinDir= System.Environment.GetEnvironmentVariable("windir");
-        public static string WinDir = Environment.CurrentDirectory; // Would be better if I knew how to make a relative path
+        public static string
+            WinDir = Environment.CurrentDirectory; // Would be better if I knew how to make a relative path
 
         private ulong _transactionsCount;
-        private FileStream _inputFile;
-        private FileStream _outputFile;
-        private StreamReader _inputFileStream;
-        private StreamWriter _outputFileStream;
+        private TextStream _inputFile;
+        private TextStream _detailFile;
+        private TextStream _errorFile;
         private string _inputFileName;
-        private string _outputFileName;
-        private bool _filesOpen;
 
 
         public bool HasTransactions => HasMoreTransactions();
@@ -42,178 +58,108 @@ namespace Bank.Logs
             get => _inputFileName;
             set
             {
-                if (_filesOpen) throw new Exception("Files must be closed first");
+                if (_inputFile.FileOpen || _detailFile.FileOpen || _errorFile.FileOpen)
+                    throw new Exception("Files must be closed first");
                 _inputFileName = value;
             }
         }
-
-        public string OutputFileName
-        {
-            get => _outputFileName;
-            set
-            {
-                if (_filesOpen) throw new Exception("Files must be closed first");
-                _outputFileName = value;
-            }
-        }
+        
+        public bool InputFileOpen => _inputFile!= null  && _inputFile.FileOpen;
+        public bool DetailsFileOpen => _detailFile !=  null && _detailFile.FileOpen;
+        public bool ErrorsFileOpen => _errorFile != null && _errorFile.FileOpen;
 
         public TransactionLog()
         {
-            _filesOpen = false;
             _transactionsCount = 0;
         }
 
         public TransactionLog(string inputFileName)
         {
-            _filesOpen = false;
             _inputFileName = inputFileName;
             _transactionsCount = 0;
-            _inputFile = null; // Do I even need to do this ? 
-            _outputFile = null; // Not created Yet
-            _outputFileName = string.Empty;
         }
 
         public TransactionLog(string inputFileName, string outputFileName)
         {
-            _filesOpen = false;
             _inputFileName = inputFileName;
-            _outputFileName = outputFileName;
-            _inputFile = null;
-            _outputFile = null;
             _transactionsCount = 0;
         }
+
+        ~TransactionLog()
+        {
+            if (_inputFile != null && _inputFile.FileOpen) _inputFile?.Dispose();
+            if (_detailFile != null && _detailFile.FileOpen) _detailFile?.Dispose();
+            if (_errorFile != null && _errorFile.FileOpen) _errorFile?.Dispose();
+        }
+
+        public bool OpenInputFile()
+        {
+            if (_inputFile != null && _inputFile.FileOpen) return false;
+            try
+            {
+                _inputFile =
+                    new TextStream(File.Open(WinDir + "//" + _inputFileName, FileMode.Open,
+                        FileAccess.Read)); // Maybe I should add something like.txt
+                
+            }
+            catch (DirectoryNotFoundException)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Input file does not exist");
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Gray;
+                throw;
+            }
+            catch (IOException)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Input file does not exist");
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Gray;
+                throw;
+            }
+            catch (ArgumentException)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Invalid File name");
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Gray;
+                throw;
+            }
+            catch (Exception)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Something Unexpected Happened");
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Gray;
+                throw;
+            }
+
+
+            return _inputFile.FileOpen;
+
+        }
+
+        public static bool WriteToOutputFile(string fileName, string lineToWrite)
+        {
+            using var outFile = new TextStream(File.Open(Environment.CurrentDirectory + $"\\{fileName}", FileMode.Append));
+            try
+            {
+                   outFile.WriteLine(lineToWrite); 
+            }
+            catch (Exception)
+
+            {
+                return false;
+            }
+
+            return true;
+        }
         
-        ~TransactionLog() 
-        {
-            _inputFile?.Dispose(); // I learn that this checks if null and then calls the method. Neat
-            _outputFile?.Dispose();
-            _inputFileStream?.Dispose();
-            _outputFileStream?.Dispose();
-        }
-
-        public bool OpenFiles()
-        {
-            if (!_filesOpen)
-            {
-                try
-                {
-                    _inputFile =
-                        File.Open(WinDir + "//" + _inputFileName, FileMode.Open,
-                            FileAccess.Read); // Maybe I should add something like.txt
-                    _inputFileStream = new StreamReader(_inputFile);
-                }
-                catch (DirectoryNotFoundException)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Input file does not exist");
-                    Console.WriteLine();
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    throw;
-                }
-                catch (IOException)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Input file does not exist");
-                    Console.WriteLine();
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    throw;
-                }
-                catch (ArgumentException)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Invalid File name");
-                    Console.WriteLine();
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    throw;
-                }
-                catch (Exception)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Something Unexpected Happened");
-                    Console.WriteLine();
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    throw;
-                }
-
-                if (_outputFileName == string.Empty)
-                {
-                    _filesOpen = true;
-                    return true;
-                }
-                else
-                {
-                    try
-                    {
-                        _outputFile = File.Open(WinDir + "//" + _outputFileName, FileMode.Create, FileAccess.Write);
-                        _outputFileStream = new StreamWriter(_outputFile);
-                        _filesOpen = true;
-                        return true;
-                    }
-                    catch (DirectoryNotFoundException)
-                    {
-                        _inputFile.Dispose(); // will have been made by this point
-                        _inputFileStream.Dispose();
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Input file does not exist");
-                        Console.WriteLine();
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        throw;
-                    }
-                    catch (IOException)
-                    {
-                        _inputFile.Dispose(); // will have been made by this point
-                        _inputFileStream.Dispose();
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Input file does not exist");
-                        Console.WriteLine();
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        throw;
-                    }
-                    catch (ArgumentException)
-                    {
-                        _inputFile.Dispose();
-                        _inputFileStream.Dispose();
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Invalid File name");
-                        Console.WriteLine();
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        throw;
-                    }
-                    catch (Exception)
-                    {
-                        _inputFile.Dispose();
-                        _inputFileStream.Dispose();
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Something Unexpected Happened");
-                        Console.WriteLine();
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        throw;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        public void WriteLogEntry(string entryToEnter)
-        {
-            if (_outputFileName == string.Empty) return;
-            if (_filesOpen)
-            {
-                //using var output = new StreamWriter(_outputFile);
-                _outputFileStream.Write(entryToEnter);
-                _outputFileStream.Flush();
-
-            }
-            else
-            {
-                throw new Exception("File must be opened First");
-            }
-        }
 
         public bool HasMoreTransactions()
         {
-            if (!_filesOpen)
+            if (!_inputFile.FileOpen)
             {
                 throw new Exception("File must be opened first");
             }
@@ -224,127 +170,189 @@ namespace Bank.Logs
             //Console.WriteLine(_inputFileStream.Peek());
             //Console.WriteLine(_inputFileStream.Peek());
             //var input = new StreamReader(_inputFile);
-            while (_inputFile != null && !(_inputFileStream.Peek() < 0) &&
-                   (!(char.IsLetter(Convert.ToChar(_inputFileStream.Peek())) ||
-                      char.IsDigit(Convert.ToChar(_inputFileStream.Peek()))) ||
-                    Convert.ToChar(_inputFileStream.Peek()) == '#'))
+            while (_inputFile != null && _inputFile.Peek() != char.MinValue &&
+                   (!_inputFile.Peek().IsAlphaNumeric() || _inputFile.Peek() == '#'))
             {
-                if (Convert.ToChar(_inputFileStream.Peek()) == '#') // Check for comment
+                if (_inputFile.Peek() == '#') // Check for comment
                 {
-                    _inputFileStream.ReadLine(); // Ignore line
+                    _inputFile.IgnoreLine(); // Ignore line
                 }
                 else
                 {
-                    _inputFileStream.ReadLine();
+                    _inputFile.IgnoreLine();
                 }
             }
 
             //Console.WriteLine(Convert.ToChar(_inputFileStream.Peek()));
-            return _inputFile != null && !(_inputFileStream.Peek() < 0) &&
-                   (char.IsLetter(Convert.ToChar((_inputFileStream.Peek()))) ||
-                    char.IsDigit(Convert.ToChar((_inputFileStream.Peek()))));
+            return _inputFile != null && _inputFile.Peek() != char.MinValue &&
+                   _inputFile.Peek().IsAlphaNumeric();
         }
 
         public Transaction GetNextTransaction()
         {
-            if (!_filesOpen) throw new Exception("File must be opened first!");
-            if (_inputFile != null)
+            if (_inputFile != null && !_inputFile.FileOpen) throw new Exception("File must be opened first!");
             {
                 var item = new Transaction();
-                while (_inputFile != null && !(_inputFileStream.Peek() < 0) &&
-                       !(char.IsLetter(Convert.ToChar(_inputFileStream.Peek())) ||
-                         char.IsDigit(Convert.ToChar(_inputFileStream.Peek()))))
+                while (_inputFile != null && _inputFile.Peek() != char.MinValue &&
+                       !_inputFile.Peek().IsAlphaNumeric())
                 {
-                    _inputFileStream.Read(); // Ignore Non - alphanumeric characters (eg whitespace) at start of line
+                    _inputFile.Ignore(); // Ignore Non - alphanumeric characters (eg whitespace) at start of line
                 }
 
 
+                if (_inputFile == null || _inputFile.Peek() == char.MinValue ||
+                    !_inputFile.Peek().IsAlphaNumeric()) return item;
+                
+                item.transactionID = ++_transactionsCount; // ID is the transaction number
 
-                if (_inputFile != null && !(_inputFileStream.Peek() < 0) &&
-                    (char.IsLetter(Convert.ToChar(_inputFileStream.Peek())) ||
-                     char.IsDigit(Convert.ToChar(_inputFileStream.Peek()))))
-                {
-                    item.transactionID = ++_transactionsCount; // ID is the transaction number
-
-                    string line = _inputFileStream.ReadLine(); // Gets line and stores in a string
-                    var fields = line?.Split(" "); //Get elements of the log
-                    if (fields != null)
-                        for (var i = 0; i < fields.Length; ++i)
-                        {
-                            fields[i] = fields[i].Replace('_', ' '); // Fix spaces
-                        }
-
-                    item.action =
-                        Convert.ToChar(
-                            fields[0]); //Complains possible nullPointerExp but didn't I check up there^ why would it change in between?
-                    item.customerNumber =
-                        Convert.ToInt32(fields[1]); // Anyway, Action and customerNumber are in all entries
-
-                    switch (item.action)
+                var line = _inputFile.ReadLine(); // Gets line and stores in a string
+                var fields = line?.Split(" "); //Get elements of the log
+                if (fields != null)
+                    for (var i = 0; i < fields.Length; ++i)
                     {
-                        case 'A': goto case 'N'; // Add new Customer
-                        case 'N': // Change Customer Name
-                            item.customerName = fields[2];
-                            break;
-                        case 'K': // check
-                            item.primaryAccount = Convert.ToBoolean(Convert.ToInt32(fields[2]));
-                            item.checkNumber = Convert.ToInt32(fields[3]);
-                            item.amountOrRate = Convert.ToDouble(fields[4]);
-                            item.recipientCustomerNumber = Convert.ToInt32(fields[5]);
-                            item.recipientPrimary = Convert.ToBoolean(Convert.ToInt32(fields[6]));
-                            item.customerName = fields[7];
-                            break;
-                        case 'X': //transfer
-                            item.primaryAccount = Convert.ToBoolean(Convert.ToInt32(fields[2]));
-                            item.amountOrRate = Convert.ToDouble(fields[3]);
-                            item.recipientCustomerNumber = Convert.ToInt32(fields[4]);
-                            item.recipientPrimary = Convert.ToBoolean(Convert.ToInt32(fields[5]));
-                            break;
-                        case 'L': // Link Customer Accounts
-                            item.recipientCustomerNumber = Convert.ToInt32(fields[2]);
-                            item.recipientPrimary = Convert.ToBoolean(Convert.ToInt32(fields[3]));
-                            break;
-                        case 'D': goto case 'R'; // Deposit to an Account
-                        case 'W': goto case 'R'; // Change the apr of an account
-                        case 'R':
-                            item.primaryAccount = Convert.ToBoolean(Convert.ToInt32(fields[2]));
-                            item.amountOrRate = Convert.ToDouble(fields[3]);
-                            break;
-                        case 'S': goto case 'P'; // Create a new account of type savings
-                        case 'C': goto case 'P'; // Create a new account of type checking
-                        case 'P': // Change the interest rate of an Created Account
-                            //Console.WriteLine(fields[2]);
-                            item.amountOrRate = Convert.ToDouble(fields[2]);
-                            break;
-                        case 'Y': item.primaryAccount = Convert.ToBoolean(Convert.ToInt32(fields[2]));
-                            break;
-                        case 'E': goto case 'M'; // Swap the primary and secondary accounts of a user
-                        case 'M': break; // Post interest on all accounts
-                        default:
-                            throw new Exception("Input File Corruption Detected");
-
+                        fields[i] = fields[i].Replace('_', ' '); // Fix spaces
                     }
-                }
+                else return item;
+                
+                item.action =
+                    Convert.ToChar(fields[0]); 
+                item.customerNumber =
+                    Convert.ToInt32(fields[1]); // Anyway, Action and customerNumber are in all entries
 
+                switch (item.action)
+                {
+                    case 'A': goto case 'N'; // Add new Customer
+                    case 'N': // Change Customer Name
+                        item.customerName = fields[2];
+                        break;
+                    case 'K': // check
+                        item.primaryAccount = Convert.ToBoolean(Convert.ToInt32(fields[2]));
+                        item.checkNumber = Convert.ToInt32(fields[3]);
+                        item.amountOrRate = Convert.ToDouble(fields[4]);
+                        item.recipientCustomerNumber = Convert.ToInt32(fields[5]);
+                        item.recipientPrimary = Convert.ToBoolean(Convert.ToInt32(fields[6]));
+                        item.customerName = fields[7];
+                        break;
+                    case 'X': //transfer
+                        item.primaryAccount = Convert.ToBoolean(Convert.ToInt32(fields[2]));
+                        item.amountOrRate = Convert.ToDouble(fields[3]);
+                        item.recipientCustomerNumber = Convert.ToInt32(fields[4]);
+                        item.recipientPrimary = Convert.ToBoolean(Convert.ToInt32(fields[5]));
+                        break;
+                    case 'L': // Link Customer Accounts
+                        item.recipientCustomerNumber = Convert.ToInt32(fields[2]);
+                        item.recipientPrimary = Convert.ToBoolean(Convert.ToInt32(fields[3]));
+                        break;
+                    case 'D': goto case 'R'; // Deposit to an Account
+                    case 'W': goto case 'R'; // Change the apr of an account
+                    case 'R':
+                        item.primaryAccount = Convert.ToBoolean(Convert.ToInt32(fields[2]));
+                        item.amountOrRate = Convert.ToDouble(fields[3]);
+                        break;
+                    case 'S': goto case 'P'; // Create a new account of type savings
+                    case 'C': goto case 'P'; // Create a new account of type checking
+                    case 'P': // Change the interest rate of an Created Account
+                        //Console.WriteLine(fields[2]);
+                        item.amountOrRate = Convert.ToDouble(fields[2]);
+                        break;
+                    case 'Y':
+                        item.primaryAccount = Convert.ToBoolean(Convert.ToInt32(fields[2]));
+                        break;
+                    case 'E': goto case 'M'; // Swap the primary and secondary accounts of a user
+                    case 'M': break; // Post interest on all accounts
+                    default:
+                        throw new Exception("Input File Corruption Detected");
+                }
                 return item;
             }
-
-            throw new Exception("Transaction Log Issue");
         }
 
-        public bool CloseFiles()
+        public bool CloseFile(MyFileType file)
         {
-            if (_filesOpen)
+            switch (file)
             {
-                _inputFileStream?.Dispose();
-                _outputFileStream?.Dispose();
-                _inputFile?.Dispose();
-                _outputFile?.Dispose();
-                _filesOpen = false;
-                return true;
+                case MyFileType.InputFile:
+                    if (_inputFile == null || !_inputFile.FileOpen) return false;
+                    _inputFile?.Dispose();
+                    return true;
+                case MyFileType.DetailFile:
+                    if (_detailFile == null || !_detailFile.FileOpen) return false;
+                    _detailFile?.Dispose();
+                    return true;
+                case MyFileType.ErrorFile:
+                    if ( _errorFile == null || !_errorFile.FileOpen) return false;
+                    _errorFile?.Dispose();
+                    return true;
+                default:
+                    throw new ArgumentException("Invalid File");
             }
+            
+        }
 
-            return false;
+        public bool OpenDetailsLog()
+        {
+            if (string.IsNullOrEmpty(_inputFileName)) return false;
+            var detailsFileName = _inputFileName + "-detail.log";
+            try
+            {
+                _detailFile = new TextStream(File.Open(WinDir + detailsFileName, FileMode.CreateNew));
+            }
+            catch (IOException e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("The file could not be created");
+                Console.WriteLine(e);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+            catch (ArgumentException e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Invalid characters in path ({detailsFileName})");
+                Console.WriteLine(e);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"File Exists and cannot be opened to format (Or is a directory) {detailsFileName}");
+                Console.WriteLine(e);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+           
+            return _detailFile.FileOpen;
+        }
+        
+        public bool OpenErrorLog()
+        {
+            if (string.IsNullOrEmpty(_inputFileName)) return false;
+            var errorFileName = _inputFileName + "-error.log";
+            try
+            {
+                _errorFile = new TextStream(File.Open(WinDir + errorFileName, FileMode.CreateNew));
+            }
+            catch (IOException e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("The file could not be created");
+                Console.WriteLine(e);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+            catch (ArgumentException e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Invalid characters in path ({errorFileName})");
+                Console.WriteLine(e);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"File Exists and cannot be opened to format (Or is a directory) {errorFileName}");
+                Console.WriteLine(e);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+           
+            return _errorFile.FileOpen;
         }
     };
 }

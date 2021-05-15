@@ -1,4 +1,8 @@
-﻿namespace Bank.Accounts
+﻿
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("AccountTests")]
+namespace Bank.Accounts
 {
     public class CheckingAccount : Account
     {

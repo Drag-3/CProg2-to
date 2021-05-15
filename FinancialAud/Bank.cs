@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Xml;
+using Bank.Extentions;
 using Bank.Logs;
 
 namespace Bank
@@ -9,11 +9,11 @@ namespace Bank
     public class Bank
     {
         private decimal _bankPrimeRate;
-        private short _primeRateMultiplier;
-        private ulong _numberOfTransactions;
-        private List<BankCustomer> _customersList;
-        private StringBuilder _details;
+        private readonly List<BankCustomer> _customersList;
+        private readonly StringBuilder _details;
         private StringBuilder _errors;
+        private ulong _numberOfTransactions;
+        private short _primeRateMultiplier;
 
         public Bank()
         {
@@ -49,7 +49,7 @@ namespace Bank
         }
 
         /// <summary>
-        /// Reads the inputted fileName, processes the text file, and does the stuff in it.
+        ///     Reads the inputted fileName, processes the text file, and does the stuff in it.
         /// </summary>
         /// <param name="inputFileName"> File to search for</param>
         /// <returns> Number of transactions contained in the file</returns>
@@ -59,91 +59,103 @@ namespace Bank
             //Interested about other types of files
             var detailedFileName = inputFileName + "-details.log";
             var transactionLog = new TransactionLog(inputFileName, detailedFileName);
-            if (transactionLog.OpenFiles())
-            {
+            if (transactionLog.OpenInputFile())
                 while (transactionLog.HasTransactions)
                 {
                     var currentTransaction = transactionLog.GetNextTransaction();
                     switch (currentTransaction.action)
                     {
-                        case 'A' : AddCustomer(currentTransaction.customerName,
-                                       (uint) currentTransaction.customerNumber,
-                                       currentTransaction.transactionID);
-                    break;
-
-                case 'C' :
-                case 'S' : CreateAccount(currentTransaction.customerNumber,
-                                         currentTransaction.action,
-                                         Convert.ToDecimal(currentTransaction.amountOrRate),
-                                         currentTransaction.transactionID);
-                    break;
-
-                case 'N' : ChangeCustomerName(currentTransaction.customerNumber,
-                                              currentTransaction.customerName,
-                                              currentTransaction.transactionID);
-                    break;
-
-                case 'P' : SetPrimeRate(Convert.ToDecimal(currentTransaction.amountOrRate),
-                                        currentTransaction.transactionID);
-                    break;
-
-                case 'L' : LinkAccounts(currentTransaction.customerNumber,
-                                        currentTransaction.recipientCustomerNumber,
-                                        !currentTransaction.recipientPrimary, // is primary is zero index, always flip
-                                        currentTransaction.transactionID);
-                    break;
-
-                case 'D' : Deposit(currentTransaction.customerNumber,
-                                   !currentTransaction.primaryAccount,
-                                   Convert.ToDecimal(currentTransaction.amountOrRate),
-                                   currentTransaction.transactionID);
-                    break;
-
-                case 'W' : Withdraw(currentTransaction.customerNumber,
-                                    !currentTransaction.primaryAccount,
-                                    Convert.ToDecimal(currentTransaction.amountOrRate),
-                                    currentTransaction.transactionID);
-                    break;
-
-                case 'K' : ProcessCheck(currentTransaction.customerNumber,
-                                        !currentTransaction.primaryAccount,
-                                        currentTransaction.checkNumber,
-                                        currentTransaction.customerName,
-                                        Convert.ToDecimal(currentTransaction.amountOrRate),
-                                        currentTransaction.transactionID,
-                                        currentTransaction.recipientCustomerNumber,
-                                        !currentTransaction.recipientPrimary);
-                    break;
-
-                case 'X' : Transfer(currentTransaction.customerNumber, // Recipient = to
-                                    !currentTransaction.primaryAccount,
-                                    Convert.ToDecimal(currentTransaction.amountOrRate),
-                                    currentTransaction.recipientCustomerNumber, // Originating ID = from
-                                    !currentTransaction.recipientPrimary,
-                                    currentTransaction.transactionID);
-                    break;
-                case 'E' : SwapAccounts(currentTransaction.customerNumber,
-                                        currentTransaction.transactionID);
-                    break;
-                case 'M' : MonthEndProcessing(currentTransaction.transactionID);
-                    break;
-                case 'R' : ChangeAnnualPercentageRate(currentTransaction.customerNumber,
-                                      !currentTransaction.primaryAccount,
-                                      Convert.ToDecimal(currentTransaction.amountOrRate),
-                                      currentTransaction.transactionID);
+                        case 'A':
+                            AddCustomer(currentTransaction.customerName,
+                                (uint) currentTransaction.customerNumber,
+                                currentTransaction.transactionID);
                             break;
-                case 'Y' : DeleteAccount(currentTransaction.customerNumber,
-                                         !currentTransaction.primaryAccount);
-                    break;
-                default : --_numberOfTransactions;
-                    break; // Add to Error list if I end up making that
+
+                        case 'C':
+                        case 'S':
+                            CreateAccount(currentTransaction.customerNumber,
+                                currentTransaction.action,
+                                Convert.ToDecimal(currentTransaction.amountOrRate),
+                                currentTransaction.transactionID);
+                            break;
+
+                        case 'N':
+                            ChangeCustomerName(currentTransaction.customerNumber,
+                                currentTransaction.customerName,
+                                currentTransaction.transactionID);
+                            break;
+
+                        case 'P':
+                            SetPrimeRate(Convert.ToDecimal(currentTransaction.amountOrRate),
+                                currentTransaction.transactionID);
+                            break;
+
+                        case 'L':
+                            LinkAccounts(currentTransaction.customerNumber,
+                                currentTransaction.recipientCustomerNumber,
+                                !currentTransaction.recipientPrimary, // is primary is zero index, always flip
+                                currentTransaction.transactionID);
+                            break;
+
+                        case 'D':
+                            Deposit(currentTransaction.customerNumber,
+                                !currentTransaction.primaryAccount,
+                                Convert.ToDecimal(currentTransaction.amountOrRate),
+                                currentTransaction.transactionID);
+                            break;
+
+                        case 'W':
+                            Withdraw(currentTransaction.customerNumber,
+                                !currentTransaction.primaryAccount,
+                                Convert.ToDecimal(currentTransaction.amountOrRate),
+                                currentTransaction.transactionID);
+                            break;
+
+                        case 'K':
+                            ProcessCheck(currentTransaction.customerNumber,
+                                !currentTransaction.primaryAccount,
+                                currentTransaction.checkNumber,
+                                currentTransaction.customerName,
+                                Convert.ToDecimal(currentTransaction.amountOrRate),
+                                currentTransaction.transactionID,
+                                currentTransaction.recipientCustomerNumber,
+                                !currentTransaction.recipientPrimary);
+                            break;
+
+                        case 'X':
+                            Transfer(currentTransaction.customerNumber, // Recipient = to
+                                !currentTransaction.primaryAccount,
+                                Convert.ToDecimal(currentTransaction.amountOrRate),
+                                currentTransaction.recipientCustomerNumber, // Originating ID = from
+                                !currentTransaction.recipientPrimary,
+                                currentTransaction.transactionID);
+                            break;
+                        case 'E':
+                            SwapAccounts(currentTransaction.customerNumber,
+                                currentTransaction.transactionID);
+                            break;
+                        case 'M':
+                            MonthEndProcessing(currentTransaction.transactionID);
+                            break;
+                        case 'R':
+                            ChangeAnnualPercentageRate(currentTransaction.customerNumber,
+                                !currentTransaction.primaryAccount,
+                                Convert.ToDecimal(currentTransaction.amountOrRate),
+                                currentTransaction.transactionID);
+                            break;
+                        case 'Y':
+                            DeleteAccount(currentTransaction.customerNumber,
+                                !currentTransaction.primaryAccount);
+                            break;
+                        default:
+                            --_numberOfTransactions;
+                            break; // Add to Error list if I end up making that
                     }
 
                     ++_numberOfTransactions;
                 }
-            }
 
-            transactionLog.CloseFiles();
+            transactionLog.CloseFile(MyFileType.InputFile);
             return _numberOfTransactions;
         }
 
@@ -154,18 +166,12 @@ namespace Bank
 
         private void CreateAccount(int userNumber, char accountType, decimal accountInterest, ulong transactionNumber)
         {
-            if (userNumber < _customersList.Count)
-            {
-                _customersList[userNumber].AddAccount(accountType, accountInterest);
-            }
+            if (userNumber < _customersList.Count) _customersList[userNumber].AddAccount(accountType, accountInterest);
         }
 
         private void ChangeCustomerName(int userNumber, string newUserName, ulong transactionNumber)
         {
-            if (userNumber < _customersList.Count)
-            {
-                _customersList[userNumber].UserName = newUserName;
-            }
+            if (userNumber < _customersList.Count) _customersList[userNumber].UserName = newUserName;
         }
 
         private void LinkAccounts(int userNumber, int originUserNumber, bool originPrimary, ulong transactionNumber)
@@ -176,6 +182,7 @@ namespace Bank
                 _customersList[userNumber].AddAccount(_customersList[originUserNumber].PrimaryAccount);
                 return;
             }
+
             _customersList[userNumber].AddAccount(_customersList[originUserNumber].SecondaryAccount);
         }
 
@@ -188,6 +195,7 @@ namespace Bank
                     _customersList[userNumber].DepositTo(0, depositAmount);
                     return;
                 }
+
                 _customersList[userNumber].DepositTo(1, depositAmount);
             }
         }
@@ -204,7 +212,8 @@ namespace Bank
             _customersList[userNumber].WithdrawFrom(1, withdrawAmount);
         }
 
-        private void Transfer(int userNumber, bool primaryAccount, decimal transferAmount, int senderNumber, bool senderPrimary,
+        private void Transfer(int userNumber, bool primaryAccount, decimal transferAmount, int senderNumber,
+            bool senderPrimary,
             ulong transactionNumber)
         {
             if (userNumber >= _customersList.Count || senderNumber >= _customersList.Count) return;
@@ -216,6 +225,7 @@ namespace Bank
                         : _customersList[senderNumber].SecondaryAccount);
                 return;
             }
+
             _customersList[userNumber].TransferBetween(1, transferAmount,
                 senderPrimary
                     ? _customersList[senderNumber].PrimaryAccount
@@ -230,14 +240,8 @@ namespace Bank
 
         private void MonthEndProcessing(ulong transactionNumber)
         {
-            for (int i = 1; i < _customersList.Count; ++i)
-            {
-                _customersList[i].PostAccounts(_bankPrimeRate);
-            }
-            foreach (var customer in _customersList)
-            {
-                customer.EndInterestPosting();
-            }
+            for (var i = 1; i < _customersList.Count; ++i) _customersList[i].PostAccounts(_bankPrimeRate);
+            foreach (var customer in _customersList) customer.EndInterestPosting();
         }
 
         public void DeleteAccount(int userNumber, bool primaryAccount)
@@ -245,6 +249,7 @@ namespace Bank
             if (userNumber >= _customersList.Count) return;
             _customersList[userNumber].DeleteAccount(primaryAccount ? (ushort) 0 : (ushort) 1);
         }
+
         private void ChangeAnnualPercentageRate(int userNumber, bool primaryAccount, decimal newAnnualPercentageRate,
             ulong transactionNumber)
         {
@@ -278,36 +283,32 @@ namespace Bank
                 if (primaryAccount)
                 {
                     if (recipientPrimary)
-                    {
                         _customersList[userNumber].ProcessCheck(checkNumber, 0, toName, checkAmount,
                             _customersList[recipientCustomerNumber].PrimaryAccount,
                             _customersList[recipientCustomerNumber].SecondaryAccount);
-                    }
                     else
-                    {
                         _customersList[userNumber].ProcessCheck(checkNumber, 0, toName, checkAmount,
                             _customersList[recipientCustomerNumber].PrimaryAccount);
-                    }
                 }
-                else
+                else 
                 {
                     if (recipientPrimary)
-                    {
                         _customersList[userNumber].ProcessCheck(checkNumber, 1, toName, checkAmount,
                             _customersList[recipientCustomerNumber].PrimaryAccount,
                             _customersList[recipientCustomerNumber].SecondaryAccount);
-                    }
                     else
-                    {
                         _customersList[userNumber].ProcessCheck(checkNumber, 1, toName, checkAmount,
                             _customersList[recipientCustomerNumber].PrimaryAccount);
-                    }
                 }
             }
-            
-            
+            else if (recipientCustomerNumber == 0)
+            {
+                _customersList[userNumber].ProcessCheck(checkNumber, primaryAccount ? (ushort) 0 : (ushort) 1, toName,
+                    checkAmount,
+                    _customersList[recipientCustomerNumber].PrimaryAccount);
+            }
         }
-        
+
         public string PrintFinalState()
         {
             //var vertical = '║';
@@ -317,16 +318,17 @@ namespace Bank
             //var tBottom = '╤';
             //var xConnector = '╪';
             //var barSeparator =
-                //"╔════╦══════════════════╦═══╦════╦══════════╦═════╦═══════════╦════╦════╦══════════╦═════╦══════════╗";
+            //"╔════╦══════════════════╦═══╦════╦══════════╦═════╦═══════════╦════╦════╦══════════╦═════╦══════════╗";
             var output = new StringBuilder();
-            
+
             //Title Segment
             output.AppendFormat("{0,-50}", "Banking Interface V 2.1 (C#)");
             output.AppendFormat("{0,50}", "By: Justin Erysthee");
             output.AppendLine("\n");
             output.AppendFormat("{0,55}\n", "Final State");
-            output.AppendLine("╔════╤══════════════════╤════╤═════════════╤═════╤════════════╤═════╤═════════════╤═════╤═══════════╗");
-            
+            output.AppendLine(
+                "╔════╤══════════════════╤════╤═════════════╤═════╤════════════╤═════╤═════════════╤═════╤═══════════╗");
+
             //Header Segment - MUST ADD TO 99 - + Edges = 102 chars
             output.Append('║');
             output.AppendFormat("{0,-4}│", "ID"); //5
@@ -337,155 +339,202 @@ namespace Bank
             output.AppendFormat("{0,-11}", "Linked"); //11
             output.AppendFormat("{0,3}", " │ "); //3
             output.AppendFormat("{0,-4}│", "Type"); //5
-            output.AppendFormat("{0,-13}│", "Balance");//14
+            output.AppendFormat("{0,-13}│", "Balance"); //14
             output.AppendFormat("{0,-5}│", "APR"); //6
             output.AppendFormat("{0,-11}", "Linked"); //11
             output.AppendLine("║▒");
             output.AppendLine(
                 "╠════╪══════════════════╪════╪═════════════╪═════╪════════════╪═════╪═════════════╪═════╪═══════════╣▒");
-            
+
             // Body Section -  same sizes as above 
-            for (var i = 1; i < _customersList.Count; ++i)
+            for (var i = 1; i < _customersList.Count; ++i) // Rn max balance is ~ 9bill before the box is destroyed
             {
                 output.Append('║');
                 output.AppendFormat("{0,-4}│", i);
                 output.AppendFormat("{0,-18}│", _customersList[i].UserName.Truncate(18));
                 //output.AppendFormat("{0,-3}│", _customersList[i].PrimaryAccount != null ? _customersList[i].GetAccountPrimaryString(0) : "-");
-                output.AppendFormat("{0,-4}│", _customersList[i].PrimaryAccount != null ? _customersList[i].GetAccType(0) : "--");
-                output.AppendFormat("{0,-13:C}│", _customersList[i].PrimaryAccount != null ? _customersList[i].PrimaryAccountBalance : "--");
-                output.AppendFormat("{0, -5}│", _customersList[i].PrimaryAccount != null ? _customersList[i].PrimaryAccountAnnualPercentageRate + "%" :"--");
-                output.AppendFormat("{0,-11}", GetLinkedString(i,0));
+                output.AppendFormat("{0,-4}│",
+                    _customersList[i].PrimaryAccount != null ? _customersList[i].GetAccType(0) : "--");
+                output.AppendFormat("{0,-13}│",
+                    _customersList[i].PrimaryAccount != null
+                        ? PriceString(_customersList[i].PrimaryAccountBalance)
+                        : "--");
+                output.AppendFormat("{0, -5}│",
+                    _customersList[i].PrimaryAccount != null
+                        ? _customersList[i].PrimaryAccountAnnualPercentageRate + "%"
+                        : "--");
+                output.AppendFormat("{0,-11}", GetLinkedString(i, 0));
                 output.AppendFormat("{0,3}", i == 1 ? " ╽ " : " ┃ ");
                 //output.AppendFormat("{0,-3}│", _customersList[i].SecondaryAccount != null ? _customersList[i].GetAccountPrimaryString(1) : "-");
-                output.AppendFormat("{0,-4}│", _customersList[i].SecondaryAccount != null ? _customersList[i].GetAccType(1) : "--");
-                output.AppendFormat("{0,-13:C}│", _customersList[i].SecondaryAccount != null ? _customersList[i].SecondaryAccountBalance : "--");
-                output.AppendFormat("{0, -5}│", _customersList[i].SecondaryAccount != null ? _customersList[i].SecondaryAccountAnnualPercentageRate + "%" : "--");
-                output.AppendFormat("{0,-11}", GetLinkedString(i,1));
+                output.AppendFormat("{0,-4}│",
+                    _customersList[i].SecondaryAccount != null ? _customersList[i].GetAccType(1) : "--");
+                output.AppendFormat("{0,-13:}│",
+                    _customersList[i].SecondaryAccount != null
+                        ? PriceString(_customersList[i].SecondaryAccountBalance)
+                        : "--");
+                output.AppendFormat("{0, -5}│",
+                    _customersList[i].SecondaryAccount != null
+                        ? _customersList[i].SecondaryAccountAnnualPercentageRate + "%"
+                        : "--");
+                output.AppendFormat("{0,-11}", GetLinkedString(i, 1));
                 output.AppendLine("║▒");
             }
-            
+
             //Bottom Section
-            string numOfTransactions = "║Number of Transactions: " + _numberOfTransactions;
-            int lengthOfNumber = numOfTransactions.Length;
+            var numOfTransactions = "║Number of Transactions: " + _numberOfTransactions;
+            var lengthOfNumber = numOfTransactions.Length;
 
-            string totalAssets = $"║Total Assets: {TotalTender():C}";
-            int lengthOfAssets = totalAssets.Length;
+            var totalAssets = $"║Total Assets: {TotalTender():C}";
+            var lengthOfAssets = totalAssets.Length;
 
-            int locationOfT = lengthOfAssets > lengthOfNumber ? lengthOfAssets : lengthOfNumber;
-            string bottomMidLine =
+            var locationOfT = lengthOfAssets > lengthOfNumber ? lengthOfAssets : lengthOfNumber;
+            var bottomMidLine =
                 "╟────┴──────────────────┴────┴─────────────┴─────┴────────────┸─────┴─────────────┴─────┴───────────╢▒";
-            char charAtReplace = bottomMidLine[locationOfT];
-           
+            var charAtReplace = bottomMidLine[locationOfT];
+
             // make sure connection is correct
-            output.AppendLine(bottomMidLine.Remove(locationOfT,1).Insert(locationOfT, charAtReplace == '┴' ? "┼" : "┬"));
-            
-            output.AppendFormat("{0}",  numOfTransactions + "│".PadLeft(locationOfT - lengthOfNumber + 1));
-            output.Append( new string('▓', 99 - locationOfT));
+            output.AppendLine(
+                bottomMidLine.Remove(locationOfT, 1).Insert(locationOfT, charAtReplace == '┴' ? "┼" : "┬"));
+
+            output.AppendFormat("{0}", numOfTransactions + "│".PadLeft(locationOfT - lengthOfNumber + 1));
+            output.Append(new string('▓', 99 - locationOfT));
             output.AppendLine("║▒");
             output.AppendFormat("{0}", totalAssets + "│".PadLeft(locationOfT - lengthOfAssets + 1));
-            output.Append( new string('▓', 99 - locationOfT));
+            output.Append(new string('▓', 99 - locationOfT));
             output.AppendLine("║▒");
 
-            output.AppendFormat( "{0}\n",
+            output.AppendFormat("{0}\n",
                 "╚══════════════════════════════════════════════════════════════════════════════════════════════════╝▒"
-                    .Insert(locationOfT,"╧"));
+                    .Insert(locationOfT, "╧"));
             output.AppendLine(new string('▒', 102));
-            
-            
+
+
             return output.ToString();
         }
 
         public decimal TotalTender()
         {
             decimal totalAssets = 0;
-            for (int i = 1; i < _customersList.Count; i++)
+            for (var i = 1; i < _customersList.Count; i++)
             {
                 if (_customersList[i].PrimaryAccount != null && _customersList[i].AccountLinked(0) == 0)
-                {
                     totalAssets += _customersList[i].PrimaryAccountBalance;
-                }
                 if (_customersList[i].SecondaryAccount != null && _customersList[i].AccountLinked(1) == 0)
-                {
                     totalAssets += _customersList[i].SecondaryAccountBalance;
-                }
             }
+
             return totalAssets;
         }
 
         private string GetLinkedString(int userNumber, int accountToTest)
         {
             if (_customersList.Count <= userNumber) return string.Empty;
-            var notUnique = false;
             var output = new StringBuilder();
-            
-            if (accountToTest == 0)
+
+                CreateLinkedString(output, accountToTest, userNumber);
+
+                return output.ToString();
+        }
+
+
+        private void CreateLinkedString(StringBuilder builder, int primary, int userNumber)
+        {
+            switch (primary)
             {
-                if (_customersList[userNumber].PrimaryAccount == null)
-                {
-                    output.Append("--");
-                    return output.ToString();
-                }
-                for (var index = 1; index < _customersList.Count && !notUnique; index++)
-                {
-                    if (index == userNumber) continue;
-                    var customer = _customersList[index];
-                    notUnique = customer.NotUniqueAccount(_customersList[userNumber].PrimaryAccount);
-                    //if (notUnique) break;
-                }
+                case 0: GetPrimaryLinkedString(builder, userNumber);
+                    break;
+                case 1: GetSecondaryLinkedString(builder, userNumber);
+                    break;
+                default: break;
+            }
+        }
 
-                if (notUnique)
-                {
-                    var master = _customersList[userNumber].AccountLinked(0);
-                    if (master == UInt32.MaxValue) return output.ToString();
-                    output.AppendFormat("{0}", master == 0 ? "Yes: Master" : $"Yes-({master}) ");
+        private void GetSecondaryLinkedString(StringBuilder builder, int userNumber)
+        {
+            if (_customersList[userNumber].SecondaryAccount == null)
+            {
+                builder.Append("--");
+                return;
+            }
+            var notUnique = false;
+            for (var index = 1; index < _customersList.Count && !notUnique; index++)
+            {
+                if (index == userNumber) continue; // Linked accs should not be from the users acc so can skip
+                var customer = _customersList[index];
+                notUnique = customer.NotUniqueAccount(_customersList[userNumber].SecondaryAccount);
+                //if (notUnique) break;
+            }
 
-                    if (master == 0) return output.ToString();
-                    var s = _customersList[userNumber].PrimaryAccount == (_customersList[(int) master].PrimaryAccount);
-                    output.AppendFormat("{0}", s ? "P" : "S");
-
-
-                }
-                else
-                {
-                    output.Append("No");
-                }
+            if (notUnique)
+            {
+                var master = _customersList[userNumber].AccountLinked(1);
+                if (master == uint.MaxValue) return;
+                builder.AppendFormat("{0}", master == 0 ? "Yes: Master" : $"Yes-({master}) ");
+                if (master == 0) return;
+                var s = _customersList[userNumber].SecondaryAccount == _customersList[(int) master].PrimaryAccount;
+                builder.AppendFormat("{0}", s ? "P" : "S");
             }
             else
             {
-                if (_customersList[userNumber].SecondaryAccount == null)
-                {
-                    output.Append("--");
-                    return output.ToString();
-                }
-                for (var index = 1; index < _customersList.Count && !notUnique; index++)
-                {
-                    if (index == userNumber) continue;
-                    var customer = _customersList[index];
-                    notUnique = customer.NotUniqueAccount(_customersList[userNumber].SecondaryAccount);
-                    //if (notUnique) break;
-                }
-
-                if (notUnique)
-                {
-                    var master = _customersList[userNumber].AccountLinked(1);
-                    if (master == UInt32.MaxValue) return output.ToString();
-                    output.AppendFormat("{0}", master == 0 ? "Yes: Master" : $"Yes-({master}) ");
-                    if (master == 0) return output.ToString();
-                    var s = _customersList[userNumber].SecondaryAccount == (_customersList[(int) master].PrimaryAccount);
-                    output.AppendFormat("{0}", s ? "P" : "S");
-                }
-                else
-                {
-                    output.Append("No");
-                }
+                builder.Append("No");
             }
-            
-            return output.ToString();
         }
 
+        private void GetPrimaryLinkedString(StringBuilder builder, int userNumber)
+        {
+            
+            if (_customersList[userNumber].PrimaryAccount == null)
+            {
+                builder.Append("--");
+                return;
+            }
+            var notUnique = false;
+            for (var index = 1; index < _customersList.Count && !notUnique; index++)
+            {
+                if (index == userNumber) continue;
+                var customer = _customersList[index];
+                notUnique = customer.NotUniqueAccount(_customersList[userNumber].PrimaryAccount);
+                //if (notUnique) break;
+            }
+
+            if (notUnique)
+            {
+                var master = _customersList[userNumber].AccountLinked(0);
+                if (master == uint.MaxValue) return;
+                builder.AppendFormat("{0}", master == 0 ? "Yes: Master" : $"Yes-({master}) ");
+
+                if (master == 0) return;
+                var s = _customersList[userNumber].PrimaryAccount == _customersList[(int) master].PrimaryAccount;
+                builder.AppendFormat("{0}", s ? "P" : "S");
+            }
+            else
+            {
+                builder.Append("No");
+            }
+        }
+
+        
         private void AddTransactionIDToDetail(ulong transactionID)
         {
-            _details.Append($"{transactionID}".PadLeft(5, '|'));
+            _details.Append($"{transactionID}|".PadLeft(5, '|'));
         }
-    };
+
+
+        public static string PriceString(decimal amount)
+        {
+            if (amount <= 999999999) return $"{amount:C}";
+
+            var placeValue = amount / 1000000000;
+
+            switch (placeValue)
+            {
+                case < 1000:
+                    return $"${amount / 1000000000:0.#######}B";
+                case < 1000000:
+                    return $"${amount / 1000000000000:0.#######}T";
+            }
+
+            return $"{amount:C}";
+        }
+    }
 }

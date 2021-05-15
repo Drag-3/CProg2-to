@@ -43,8 +43,8 @@ S 9 .5
 C 10 0
 S 10 .5
 M 0
-L 9 7 0 
-L 8 7 0
+# L 9 7 0 
+# L 8 7 0
 # Remove some monies
 W 13 0 1
 W 13 0 1
@@ -52,8 +52,8 @@ W 13 0 1
 # One too many
 W 13 0 1
 X 13 0 10 12 0
-A 14 Du_Helderhiener_Van_Gohn
-S 14 .7
-D 14 0 4564
-X 14 0 2000 9 0
-Y 14 0
+#A 14 Du_Helderhiener_Van_Gohn
+#S 14 .7
+#D 14 0 4564
+#X 14 0 2000 9 0
+#Y 14 0
