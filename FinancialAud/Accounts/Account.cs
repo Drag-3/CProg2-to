@@ -47,35 +47,18 @@ namespace Bank.Accounts
             Owner = 0;
             Deleted = false;
         }
-        public Account(uint owner)
+        public Account(uint owner) : this()
         {
-            _cents = 0;
-            _centPrecision = 1000000000;
-            _annualPercentageRateMultiplier = 100;
-            _annualPercentageRate = 0;
-            InterestPosted = false;
             Owner = owner;
-            Deleted = false;
         }
-        public Account(uint owner, decimal apr)
+        public Account(uint owner, decimal apr) :this(owner)
         {
-            _cents = 0;
-            _centPrecision = 1000000000;
-            _annualPercentageRateMultiplier = 100;
             _annualPercentageRate = (int) (apr * _annualPercentageRateMultiplier);
-            InterestPosted = false;
-            Owner = owner;
-            Deleted = false;
         }
-        public Account(uint owner, decimal apr, long centPrecision, int multiplier)
+        public Account(uint owner, decimal apr, long centPrecision, int multiplier) : this(owner, apr)
         {
-            _cents = 0;
             _centPrecision = centPrecision;
             _annualPercentageRateMultiplier = multiplier;
-            _annualPercentageRate = (int) (apr * _annualPercentageRateMultiplier);
-            InterestPosted = false;
-            Owner = owner;
-            Deleted = false;
         }
         
         public void Deposit(decimal amt)
@@ -174,7 +157,7 @@ namespace Bank.Accounts
             _cents -= penalty * _centPrecision;
         }
 
-        private bool SecondaryWithdrawal(long amount) 
+        private bool SecondaryWithdrawal(long amount) // To be done when taking money from secondary account 
         {
             var success = (_cents - amount) >= 0;
             if (success)

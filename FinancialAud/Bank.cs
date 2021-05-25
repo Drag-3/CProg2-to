@@ -26,26 +26,14 @@ namespace Bank
             _customersList.Add(new BankCustomer(0, "Placeholder"));
         }
 
-        public Bank(decimal bankPrimeRate)
+        public Bank(decimal bankPrimeRate) : this()
         {
             _bankPrimeRate = bankPrimeRate;
-            _primeRateMultiplier = 100;
-            _numberOfTransactions = 0;
-            _customersList = new List<BankCustomer>();
-            _details = new StringBuilder();
-            _errors = new StringBuilder();
-            _customersList.Add(new BankCustomer(0, "Placeholder"));
         }
 
-        public Bank(decimal bankPrimeRate, short primeRateMultiplier)
+        public Bank(decimal bankPrimeRate, short primeRateMultiplier) : this(bankPrimeRate)
         {
-            _bankPrimeRate = bankPrimeRate;
             _primeRateMultiplier = primeRateMultiplier;
-            _numberOfTransactions = 0;
-            _customersList = new List<BankCustomer>();
-            _details = new StringBuilder();
-            _errors = new StringBuilder();
-            _customersList.Add(new BankCustomer(0, "Placeholder"));
         }
 
         /// <summary>
@@ -322,7 +310,7 @@ namespace Bank
             var output = new StringBuilder();
 
             //Title Segment
-            output.AppendFormat("{0,-50}", "Banking Interface V 2.1 (C#)");
+            output.AppendFormat("{0,-50}", "Banking Interface V 2.2 (C#)");
             output.AppendFormat("{0,50}", "By: Justin Erysthee");
             output.AppendLine("\n");
             output.AppendFormat("{0,55}\n", "Final State");

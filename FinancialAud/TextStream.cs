@@ -170,22 +170,24 @@ namespace Bank
         public string ReadLine()
         {
             if (_stream == null) throw new ArgumentException("File must be opened first");
-            var line = new byte[_stream.Length]; // Do I need a buffer the size of the file?;
+            var buffer = new byte[1]; // Only reading one byte at a time, so no need for a larger buffer
             var split = false;
-            var currentSize = 0;
+            var ms = new MemoryStream();
+            var result = string.Empty;
             byte currentByte = 1;
 
             for (; !split && _distanceFromEnd != 0;)
             {
-                _ = Read(line, currentSize, 1);
+                _ = Read(buffer, 0, 1);
                 var previousByte = currentByte;
-                currentByte = line[currentSize];
-                ++currentSize;
+                currentByte = buffer[0];
                 --_distanceFromEnd;
+                ms.Write(buffer, 0, 1); // Takes care of storing the bytes read in memory
 
                 if (currentByte != (byte) '\n') continue;
 
-                Array.Resize(ref line, currentSize);
+                var line = ms.ToArray();
+                //Array.Resize(ref buffer, currentSize);
 
                 if (previousByte == (byte) '\r')
                 {
@@ -193,10 +195,23 @@ namespace Bank
                 }
 
                 Array.Resize(ref line, line.Length - 1); // removes \n if \r does not exists
+                result = Encoding.UTF8.GetString(line, 0, line.Length);
                 split = true;
             }
+            return result;
+        }
 
-            var result = Encoding.UTF8.GetString(line, 0, line.Length);
+        public string ReadAllLines()
+        {
+            if (_stream == null) throw new ArgumentException("File must be opened first");
+            var buffer = new byte[256]; // Only reading one byte at a time, so no need for a larger buffer
+            var ms = new MemoryStream();
+            var result = string.Empty;
+            byte currentByte = 1;
+            int lengthOfBuffer;
+            while ((lengthOfBuffer = Read(buffer, 0, buffer.Length)) > 0)
+                ms.Write(buffer,0,lengthOfBuffer);
+            result = Encoding.UTF8.GetString(ms.ToArray(), 0, (int) ms.Length);
             return result;
         }
         public void IgnoreLine()

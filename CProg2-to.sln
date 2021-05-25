@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "StopWatchTests", "StopWatch
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TImerTests", "TImerTests\TImerTests.csproj", "{F1427749-83BC-458E-B582-D9D0F9E3BACA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfApplication1", "WpfApplication1\WpfApplication1.csproj", "{8A3A91F9-849C-44F7-B09E-C757B8358353}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,10 @@ Global
 		{F1427749-83BC-458E-B582-D9D0F9E3BACA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1427749-83BC-458E-B582-D9D0F9E3BACA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1427749-83BC-458E-B582-D9D0F9E3BACA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A3A91F9-849C-44F7-B09E-C757B8358353}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A3A91F9-849C-44F7-B09E-C757B8358353}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A3A91F9-849C-44F7-B09E-C757B8358353}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A3A91F9-849C-44F7-B09E-C757B8358353}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F1427749-83BC-458E-B582-D9D0F9E3BACA} = {B614225B-20B7-42A1-8680-DCCC16CCC542}
