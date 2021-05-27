@@ -6,4 +6,8 @@
         <RootNamespace>Bank</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Content Include="bin\Debug\net5.0\log1" />
+    </ItemGroup>
+
 </Project>

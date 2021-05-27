@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
+using Bank.Logs;
+
 namespace Bank
 {
     static class Program
@@ -9,8 +11,11 @@ namespace Bank
         static void Main(string[] args)
         {
             SetupConsole();
-            
-            
+
+            //var yu = new Logger("Yes");
+            //yu.Log(Logger.LogPriority.Debug, "First Test");
+            //var qw = "Using var";
+            //yu.Log(Logger.LogPriority.Info, qw);
             
             var test = new Bank();
             //Console.WriteLine(test.PriceString(12345678904324));

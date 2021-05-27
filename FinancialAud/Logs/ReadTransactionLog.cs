@@ -1,21 +1,10 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
 using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Net.Mime;
-using System.Runtime.CompilerServices;
-using System.Text;
 using Bank.Extentions;
-
+using TextStreamReader;
 
 namespace Bank.Logs
 {
-
-    using System.IO;
-
     public struct Transaction
     {
         public ulong transactionID;
@@ -73,17 +62,11 @@ namespace Bank.Logs
             _transactionsCount = 0;
         }
 
-        public TransactionLog(string inputFileName)
+        public TransactionLog(string inputFileName) :this()
         {
             _inputFileName = inputFileName;
-            _transactionsCount = 0;
         }
-
-        public TransactionLog(string inputFileName, string outputFileName)
-        {
-            _inputFileName = inputFileName;
-            _transactionsCount = 0;
-        }
+        
 
         ~TransactionLog()
         {
@@ -267,6 +250,7 @@ namespace Bank.Logs
             }
         }
 
+        //Closes a specified file if open, the destructor will do so anyway.
         public bool CloseFile(MyFileType file)
         {
             switch (file)

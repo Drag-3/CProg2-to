@@ -106,6 +106,7 @@ namespace Bank
             UserName = userName;
         }
 
+        // Creates Default Account
         public void AddAccount(char accountType)
         {
             if (_numberOfAccounts >= 2) return;
@@ -285,7 +286,7 @@ namespace Bank
                     return false;
 
                 }
-                else if (accountToTransfer is CheckingAccount isChecking)
+                else if (accountToTransfer is CheckingAccount isChecking) // opposite check
                 {
                     success = isChecking.Withdraw(checkAmount);
                     if (success) _accountList[account].Deposit(checkAmount);
