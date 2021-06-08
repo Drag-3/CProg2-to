@@ -5,11 +5,17 @@ using Bank.Accounts;
 
 namespace Bank
 {
-    internal enum TypeOfAccount
+    internal enum AccountLoc
     {
         PrimaryAccount,
         SecondaryAccount
     }
+    public enum AccountType
+    {
+        Savings,
+        Checking
+    }
+    
 
     public class BankCustomer
     {
@@ -22,19 +28,20 @@ namespace Bank
         {
             get
             {
-                if (CheckForAccountDeleted((int) TypeOfAccount.PrimaryAccount)) return 0;
-                return _accountList.Count > (int) TypeOfAccount.PrimaryAccount ?
-                    _accountList[(int) TypeOfAccount.PrimaryAccount].AccountBalance : 0;
+                if (CheckForAccountDeleted((int) AccountLoc.PrimaryAccount)) return 0;
+                return _accountList.Count > (int) AccountLoc.PrimaryAccount ?
+                    _accountList[(int) AccountLoc.PrimaryAccount].AccountBalance : 0;
             }
         }
+        
 
         public decimal SecondaryAccountBalance
         {
             get
             {
-                if (CheckForAccountDeleted((int) TypeOfAccount.SecondaryAccount)) return 0;
-                return _accountList.Count > (int) TypeOfAccount.SecondaryAccount ?
-                    _accountList[(int) TypeOfAccount.SecondaryAccount].AccountBalance : 0;
+                if (CheckForAccountDeleted((int) AccountLoc.SecondaryAccount)) return 0;
+                return _accountList.Count > (int) AccountLoc.SecondaryAccount ?
+                    _accountList[(int) AccountLoc.SecondaryAccount].AccountBalance : 0;
             }
         }
 
@@ -42,15 +49,15 @@ namespace Bank
         {
             get
             {
-                if (CheckForAccountDeleted((int) TypeOfAccount.PrimaryAccount)) return 0;
-                return _accountList.Count > (int) TypeOfAccount.PrimaryAccount ?
-                    _accountList[(int) TypeOfAccount.PrimaryAccount].AnnualPercentageRate : 0;
+                if (CheckForAccountDeleted((int) AccountLoc.PrimaryAccount)) return 0;
+                return _accountList.Count > (int) AccountLoc.PrimaryAccount ?
+                    _accountList[(int) AccountLoc.PrimaryAccount].AnnualPercentageRate : 0;
             }
             set
             {
-                if (_accountList.Count > (int) TypeOfAccount.PrimaryAccount)
+                if (_accountList.Count > (int) AccountLoc.PrimaryAccount)
                 {
-                    _accountList[(int) TypeOfAccount.PrimaryAccount].AnnualPercentageRate = value;
+                    _accountList[(int) AccountLoc.PrimaryAccount].AnnualPercentageRate = value;
                 }
             }
         }
@@ -59,16 +66,16 @@ namespace Bank
         {
             get
             {
-                if (CheckForAccountDeleted((int) TypeOfAccount.SecondaryAccount)) return 0;
-                return _accountList.Count > (int) TypeOfAccount.SecondaryAccount ?
-                    _accountList[(int) TypeOfAccount.SecondaryAccount].AnnualPercentageRate : 0;
+                if (CheckForAccountDeleted((int) AccountLoc.SecondaryAccount)) return 0;
+                return _accountList.Count > (int) AccountLoc.SecondaryAccount ?
+                    _accountList[(int) AccountLoc.SecondaryAccount].AnnualPercentageRate : 0;
             }
             set
             {
-                var _ = CheckForAccountDeleted((int) TypeOfAccount.SecondaryAccount); // Maybe this will work
-                if (_accountList.Count > (int) TypeOfAccount.SecondaryAccount)
+                var _ = CheckForAccountDeleted((int) AccountLoc.SecondaryAccount); // Maybe this will work
+                if (_accountList.Count > (int) AccountLoc.SecondaryAccount)
                 {
-                    _accountList[(int) TypeOfAccount.SecondaryAccount].AnnualPercentageRate = value;
+                    _accountList[(int) AccountLoc.SecondaryAccount].AnnualPercentageRate = value;
                 }
             }
         }
@@ -77,9 +84,9 @@ namespace Bank
         {
             get
             {
-                var _ = CheckForAccountDeleted((int) TypeOfAccount.PrimaryAccount);
-                return _numberOfAccounts > (int) TypeOfAccount.PrimaryAccount ?
-                    _accountList[(int) TypeOfAccount.PrimaryAccount] : null;
+                var _ = CheckForAccountDeleted((int) AccountLoc.PrimaryAccount);
+                return _numberOfAccounts > (int) AccountLoc.PrimaryAccount ?
+                    _accountList[(int) AccountLoc.PrimaryAccount] : null;
 
                 //throw new IndexOutOfRangeException("The account does not exist");
             }   // Null seems easier to work with & test for.
@@ -89,9 +96,9 @@ namespace Bank
         {
             get
             {
-                var _ = CheckForAccountDeleted((int) TypeOfAccount.SecondaryAccount);
-                return _numberOfAccounts > (int) TypeOfAccount.SecondaryAccount ?
-                    _accountList[(int) TypeOfAccount.SecondaryAccount] : null;
+                var _ = CheckForAccountDeleted((int) AccountLoc.SecondaryAccount);
+                return _numberOfAccounts > (int) AccountLoc.SecondaryAccount ?
+                    _accountList[(int) AccountLoc.SecondaryAccount] : null;
 
 
                 //throw new IndexOutOfRangeException("The account does not exist");
@@ -156,7 +163,7 @@ namespace Bank
         {
             if (CheckForAccountDeleted(account))
                 return false; // Will not run if acc has been deleted, but what if secondary is deleted
-            if (account == (int) TypeOfAccount.PrimaryAccount && _accountList.Count > 1)
+            if (account == (int) AccountLoc.PrimaryAccount && _accountList.Count > 1)
             {
                 return !CheckForAccountDeleted(1) && _accountList[account].Withdraw(amount, _accountList[1]);
             }
@@ -168,7 +175,7 @@ namespace Bank
         public bool TransferBetween(ushort account, decimal amount, Account toTransfer)
         {
             if (CheckForAccountDeleted(account)) return false;
-            if (account == (int) TypeOfAccount.PrimaryAccount && _accountList.Count > 1)
+            if (account == (int) AccountLoc.PrimaryAccount && _accountList.Count > 1)
             {
                 return !CheckForAccountDeleted(1) && _accountList[account].Transfer(amount, _accountList[1], toTransfer);
             }
@@ -187,7 +194,7 @@ namespace Bank
         {
             foreach (var account in _accountList)
             {
-                account.PostInterest(bankPrimeRate); // Wont post if null
+                account?.PostInterest(bankPrimeRate); //
             }
         }
 
@@ -219,10 +226,10 @@ namespace Bank
         public bool ProcessCheck(int checkNumber, ushort account, string toName, decimal checkAmount)
         {
             if (CheckForAccountDeleted(account)) return false;
-            bool success;
             if (checkAmount > 0)
-            
-                if (account == (int) TypeOfAccount.PrimaryAccount &&
+            {
+                bool success;
+                if (account == (int) AccountLoc.PrimaryAccount &&
                     _accountList.Count == 2) // If primary and has secondary
                 {
                     if (CheckForAccountDeleted(1)) return false;
@@ -245,8 +252,15 @@ namespace Bank
                     //if (success) OutboundAccount.Send(checkAmount);
                     return success;
                 }
+            }
+            else
+            {
+                _accountList[account].Deposit(-checkAmount); // Can't Fail, assumes the withdrawl is valid
+                return true;
+            }
 
             return false;
+
         }
         public bool ProcessCheck(int checkNumber, ushort account, string toName, decimal checkAmount,
             Account accountToTransfer)
@@ -259,7 +273,7 @@ namespace Bank
                 bool success;
                 if (checkAmount > 0)
                 {
-                    if (account == (int) TypeOfAccount.PrimaryAccount &&
+                    if (account == (int) AccountLoc.PrimaryAccount &&
                         _accountList.Count == 2) // If primary and has secondary
                     {
                         if (CheckForAccountDeleted(1)) return false;
@@ -288,8 +302,8 @@ namespace Bank
                 }
                 else if (accountToTransfer is CheckingAccount isChecking) // opposite check
                 {
-                    success = isChecking.Withdraw(checkAmount);
-                    if (success) _accountList[account].Deposit(checkAmount);
+                    success = isChecking.Withdraw(-checkAmount);
+                    if (success) _accountList[account].Deposit(-checkAmount);
                     return success;
                 }
 
@@ -306,7 +320,7 @@ namespace Bank
             bool success;
             if (checkAmount > 0)
             {
-                if (account == (int) TypeOfAccount.PrimaryAccount &&
+                if (account == (int) AccountLoc.PrimaryAccount &&
                     _accountList.Count == 2) // If primary and has secondary
                 {
                     if (CheckForAccountDeleted(1)) return false;
@@ -334,8 +348,8 @@ namespace Bank
             }
             else if (accountToTransfer is CheckingAccount isChecking)
             {
-                success = isChecking.Withdraw(checkAmount, accountToTransferSecondary);
-                if (success) _accountList[account].Deposit(checkAmount);
+                success = isChecking.Withdraw(-checkAmount, accountToTransferSecondary);
+                if (success) _accountList[account].Deposit(-checkAmount);
                 return success;
             }
 
@@ -343,33 +357,27 @@ namespace Bank
         }
 
 
-        public string GetAccountPrimaryString(short acc){
+        public bool? IsPrimary(short acc){
             var output = new StringBuilder();
-            if (_numberOfAccounts > acc)
+            if (acc >= 0 && _numberOfAccounts > acc)
             {
-                output.Append(acc != 0 ? "S" : "P");
+                return acc == 0; // primary
             }
-            else
-            {
-                output.Append("-");
-            }
-            return output.ToString();
+
+            return null;
         }
         
-        public string GetAccType(short acc){
-            var output = new StringBuilder();
+        public AccountType? GetAccType(short acc){
+            
             if (_numberOfAccounts > acc)
             {
-                output.Append(_accountList[acc] is CheckingAccount ? 'C' : 'S');
+                return _accountList[acc] is CheckingAccount ? AccountType.Checking : AccountType.Savings;
             }
-            else
-            {
-                output.Append('-');
-            }
-            return output.ToString();
+
+            return null;
         }
 
-        public uint AccountLinked(int accountToCheck)
+        public uint AccountLinked(int accountToCheck) // Returns
         {
             if (CheckForAccountDeleted(accountToCheck) || _accountList.Count <= accountToCheck) return UInt32.MaxValue;
             return _accountList[accountToCheck].IsLinked(UserIdNumber);

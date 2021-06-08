@@ -32,6 +32,7 @@ namespace BankConsole
                 Console.Clear();
 
                 test.ProcessTransactionLogs(fileName);
+                Menus.PrintPrettyFinal(test);
                 Console.WriteLine(Menus.PrintFinalState(test));
             }
 

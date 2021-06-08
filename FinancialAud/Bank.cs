@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using Bank.Extentions;
 using Bank.Logs;
@@ -335,9 +336,23 @@ namespace Bank
                 output.Append('║');
                 output.AppendFormat("{0,-4}│", userIdNumber);
                 output.AppendFormat("{0,-18}│", customer.UserName.Truncate(18));
+
                 //output.AppendFormat("{0,-3}│", _customersList[i].PrimaryAccount != null ? _customersList[i].GetAccountPrimaryString(0) : "-");
-                output.AppendFormat("{0,-4}│",
-                    customer.PrimaryAccount != null ? customer.GetAccType(0) : "--");
+                var accType = customer.GetAccType(0);
+                var type = accType switch
+                {
+                    AccountType.Checking => "C",
+                    AccountType.Savings => "S",
+                    _ => "--"
+                };
+
+                output.AppendFormat("{0,-4}│", accType switch
+                {
+                    AccountType.Checking => "C",
+                    AccountType.Savings => "S",
+                    _ => "--"
+                });
+                    //customer.PrimaryAccount != null ? customer.GetAccType(0) : "--");
                 output.AppendFormat("{0,-13}│",
                     customer.PrimaryAccount != null
                         ? PriceString(customer.PrimaryAccountBalance)
@@ -349,8 +364,13 @@ namespace Bank
                 output.AppendFormat("{0,-11}", GetLinkedString(userIdNumber, 0));
                 output.AppendFormat("{0,3}", userIdNumber == 1 ? " ╽ " : " ┃ ");
                 //output.AppendFormat("{0,-3}│", _customersList[i].SecondaryAccount != null ? _customersList[i].GetAccountPrimaryString(1) : "-");
-                output.AppendFormat("{0,-4}│",
-                    customer.SecondaryAccount != null ? customer.GetAccType(1) : "--");
+                accType = customer.GetAccType(1);
+                output.AppendFormat("{0,-4}│", accType switch
+                {
+                    AccountType.Checking => "C",
+                    AccountType.Savings => "S",
+                    _ => "--"
+                });
                 output.AppendFormat("{0,-13:}│",
                     customer.SecondaryAccount != null
                         ? PriceString(customer.SecondaryAccountBalance)
