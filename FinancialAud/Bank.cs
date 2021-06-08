@@ -307,7 +307,7 @@ namespace Bank
 
             //Title Segment
             output.AppendFormat("{0,-50}", "Banking Interface V 2.2 (C#)");
-            output.AppendFormat("{0,50}", "By: Just");
+            output.AppendFormat("{0,50}", "By: J");
             output.AppendLine("\n");
             output.AppendFormat("{0,55}\n", "Final State");
             output.AppendLine(
