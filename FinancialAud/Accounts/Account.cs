@@ -1,7 +1,7 @@
 ﻿
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("AccountTests")]
+[assembly: InternalsVisibleTo("Tests-")]
 namespace Bank.Accounts
 {
     

@@ -2,15 +2,13 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialAud", "FinancialAud\FinancialAud.csproj", "{EB25CD70-2BBA-457C-81D5-202B9AB37E77}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfApp1", "WpfApp1\WpfApp1.csproj", "{6ADA8F84-0DA0-4E50-9519-6491FC5D0EBE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccountTests", "AccountTests\AccountTests.csproj", "{AF2A3AB9-FDB6-4572-A647-144026218F9F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests-", "Tests-\Tests-.csproj", "{AF2A3AB9-FDB6-4572-A647-144026218F9F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "StopWatchTests", "StopWatchTests", "{B614225B-20B7-42A1-8680-DCCC16CCC542}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TImerTests", "TImerTests\TImerTests.csproj", "{F1427749-83BC-458E-B582-D9D0F9E3BACA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfApplication1", "WpfApplication1\WpfApplication1.csproj", "{8A3A91F9-849C-44F7-B09E-C757B8358353}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BankConsole", "BankConsole\BankConsole.csproj", "{3C85CAB8-2601-42A5-B715-B4134A98ED7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -22,10 +20,6 @@ Global
 		{EB25CD70-2BBA-457C-81D5-202B9AB37E77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB25CD70-2BBA-457C-81D5-202B9AB37E77}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB25CD70-2BBA-457C-81D5-202B9AB37E77}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6ADA8F84-0DA0-4E50-9519-6491FC5D0EBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6ADA8F84-0DA0-4E50-9519-6491FC5D0EBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6ADA8F84-0DA0-4E50-9519-6491FC5D0EBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6ADA8F84-0DA0-4E50-9519-6491FC5D0EBE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AF2A3AB9-FDB6-4572-A647-144026218F9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AF2A3AB9-FDB6-4572-A647-144026218F9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF2A3AB9-FDB6-4572-A647-144026218F9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -34,10 +28,10 @@ Global
 		{F1427749-83BC-458E-B582-D9D0F9E3BACA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1427749-83BC-458E-B582-D9D0F9E3BACA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1427749-83BC-458E-B582-D9D0F9E3BACA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8A3A91F9-849C-44F7-B09E-C757B8358353}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A3A91F9-849C-44F7-B09E-C757B8358353}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8A3A91F9-849C-44F7-B09E-C757B8358353}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8A3A91F9-849C-44F7-B09E-C757B8358353}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C85CAB8-2601-42A5-B715-B4134A98ED7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C85CAB8-2601-42A5-B715-B4134A98ED7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C85CAB8-2601-42A5-B715-B4134A98ED7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C85CAB8-2601-42A5-B715-B4134A98ED7D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F1427749-83BC-458E-B582-D9D0F9E3BACA} = {B614225B-20B7-42A1-8680-DCCC16CCC542}

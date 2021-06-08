@@ -1,5 +1,5 @@
 # CProg2-to
 
-<bold>The Project files are in FinancialAud, everything else, I do not know how to remove :/ </bold>
+<bold> :/ </bold>
 
-The Log is in FinancialAud/bin/Debug/net5.0  It is log1
+The Log used is in the same place as the exe for now  It is log1

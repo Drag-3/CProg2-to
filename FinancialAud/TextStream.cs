@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace TextStreamReader
@@ -81,7 +82,7 @@ namespace TextStreamReader
              _ = Read(line, 0, 1);
              --_distanceFromEnd;
              var bits = new BitArray(line);
-             for (var i = 7; i >= 3; --i)
+             for (var i = 7; i >= 3; --i) // Only read first few to find out size
              {
                  if (bits[i])
                  {
@@ -204,14 +205,12 @@ namespace TextStreamReader
         public string ReadAllLines()
         {
             if (_stream == null) throw new ArgumentException("File must be opened first");
-            var buffer = new byte[256]; // Only reading one byte at a time, so no need for a larger buffer
+            var buffer = new byte[256]; // Reading in larger chunks
             var ms = new MemoryStream();
-            var result = string.Empty;
-            byte currentByte = 1;
             int lengthOfBuffer;
             while ((lengthOfBuffer = Read(buffer, 0, buffer.Length)) > 0)
                 ms.Write(buffer,0,lengthOfBuffer);
-            result = Encoding.UTF8.GetString(ms.ToArray(), 0, (int) ms.Length);
+            var result = Encoding.UTF8.GetString(ms.ToArray(), 0, (int) ms.Length);
             return result;
         }
         public void IgnoreLine()
@@ -252,22 +251,11 @@ namespace TextStreamReader
         public void WriteLine(string lineToWrite)
         {
             if (_stream == null) throw new ArgumentException("File must be opened first");
-            var byteString = new List<byte>();
-            foreach (char character in lineToWrite)
-            {
-                var characterBytesArray = Encoding.UTF8.GetBytes(character.ToString());
-                foreach (byte characterbyte in characterBytesArray)
-                {
-                    byteString.Add(characterbyte);
-                }
-                
-            }
+            var byteString = lineToWrite.SelectMany(character => Encoding.UTF8.GetBytes(character.ToString())).ToList();
 
             var newLine = Environment.NewLine;
-            foreach (var nl in newLine)
-            {
-                byteString.Add((byte) nl);
-            }
+            
+            byteString.AddRange(newLine.Select(nl => (byte) nl));
 
             Write(byteString.ToArray());
             Flush();
@@ -276,34 +264,17 @@ namespace TextStreamReader
         public void WriteLine(string lineToWrite, NewLine newLineType)
         {
             if (_stream == null) throw new ArgumentException("File must be opened first");
-            var byteString = new List<byte>();
-            foreach (char character in lineToWrite)
-            {
-                var characterBytesArray = Encoding.UTF8.GetBytes(character.ToString());
-                foreach (byte characterbyte in characterBytesArray)
-                {
-                    byteString.Add(characterbyte);
-                }
-                
-            }
+            var byteString = lineToWrite.SelectMany(character => Encoding.UTF8.GetBytes(character.ToString())).ToList();
 
-            string newLine;
-            switch (newLineType)
+            var newLine = newLineType switch
             {
-                case NewLine.System: newLine = Environment.NewLine;
-                    break;
-                case NewLine.Windows: newLine = "\r\n";
-                    break;
-                case NewLine.Unix: newLine = "\n";
-                    break;
-                case NewLine.Mac: newLine = "\r";
-                    break;
-                default: throw new ArgumentException("Invalid New Line");
-            }
-            foreach (var nl in newLine)
-            {
-                byteString.Add((byte) nl);
-            }
+                NewLine.System => Environment.NewLine,
+                NewLine.Windows => "\r\n",
+                NewLine.Unix => "\n",
+                NewLine.Mac => "\r",
+                _ => throw new ArgumentException("Invalid New Line")
+            };
+            byteString.AddRange(newLine.Select(nl => (byte) nl));
 
             Write(byteString.ToArray());
             Flush();
@@ -313,7 +284,6 @@ namespace TextStreamReader
         {
             _stream?.Dispose();
             FileOpen = false;
-
         }
         
     }

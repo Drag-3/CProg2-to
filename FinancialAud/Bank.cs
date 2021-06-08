@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using Bank.Extentions;
 using Bank.Logs;
@@ -9,27 +11,27 @@ namespace Bank
     public class Bank
     {
         private decimal _bankPrimeRate;
-        private readonly Dictionary<int, BankCustomer> _customersList;
-        private ulong _numberOfTransactions;
-        private short _primeRateMultiplier;
+        public decimal BankPrimeRate
+        {
+            get => _bankPrimeRate;
+            set => SetPrimeRate(value);
+        }
+        public ulong NumberOfTransactions { get; private set; }
+
+        public Dictionary<int, BankCustomer> CustomerRepository { get; }
 
         public Bank()
         {
             _bankPrimeRate = 0;
-            _primeRateMultiplier = 100;
-            _numberOfTransactions = 0;
-            _customersList = new Dictionary<int, BankCustomer>();
+            NumberOfTransactions = 0;
+            CustomerRepository = new Dictionary<int, BankCustomer>();
         }
 
         public Bank(decimal bankPrimeRate) : this()
         {
             _bankPrimeRate = bankPrimeRate;
         }
-
-        public Bank(decimal bankPrimeRate, short primeRateMultiplier) : this(bankPrimeRate)
-        {
-            _primeRateMultiplier = primeRateMultiplier;
-        }
+        
 
         /// <summary>
         ///     Reads the inputted fileName, processes the text file, and does the stuff in it.
@@ -38,7 +40,7 @@ namespace Bank
         /// <returns> Number of transactions contained in the file</returns>
         public ulong ProcessTransactionLogs(string inputFileName)
         {
-            _numberOfTransactions = 0;
+            NumberOfTransactions = 0;
             //Interested about other types of files like .xml for storing a bank after processing
             var transactionLog = new TransactionLog(inputFileName);
             if (transactionLog.OpenInputFile())
@@ -49,48 +51,41 @@ namespace Bank
                     {
                         case 'A':
                             AddCustomer(currentTransaction.customerName,
-                                (uint) currentTransaction.customerNumber,
-                                currentTransaction.transactionID);
+                                (uint) currentTransaction.customerNumber);
                             break;
 
                         case 'C':
                         case 'S':
                             CreateAccount(currentTransaction.customerNumber,
                                 currentTransaction.action,
-                                Convert.ToDecimal(currentTransaction.amountOrRate),
-                                currentTransaction.transactionID);
+                                Convert.ToDecimal(currentTransaction.amountOrRate));
                             break;
 
                         case 'N':
                             ChangeCustomerName(currentTransaction.customerNumber,
-                                currentTransaction.customerName,
-                                currentTransaction.transactionID);
+                                currentTransaction.customerName);
                             break;
 
                         case 'P':
-                            SetPrimeRate(Convert.ToDecimal(currentTransaction.amountOrRate),
-                                currentTransaction.transactionID);
+                            SetPrimeRate(Convert.ToDecimal(currentTransaction.amountOrRate));
                             break;
 
                         case 'L':
                             LinkAccounts(currentTransaction.customerNumber,
                                 currentTransaction.recipientCustomerNumber,
-                                !currentTransaction.recipientPrimary, // is primary is zero index, always flip
-                                currentTransaction.transactionID);
+                                !currentTransaction.recipientPrimary);
                             break;
 
                         case 'D':
                             Deposit(currentTransaction.customerNumber,
                                 !currentTransaction.primaryAccount,
-                                Convert.ToDecimal(currentTransaction.amountOrRate),
-                                currentTransaction.transactionID);
+                                Convert.ToDecimal(currentTransaction.amountOrRate));
                             break;
 
                         case 'W':
                             Withdraw(currentTransaction.customerNumber,
                                 !currentTransaction.primaryAccount,
-                                Convert.ToDecimal(currentTransaction.amountOrRate),
-                                currentTransaction.transactionID);
+                                Convert.ToDecimal(currentTransaction.amountOrRate));
                             break;
 
                         case 'K':
@@ -99,7 +94,6 @@ namespace Bank
                                 currentTransaction.checkNumber,
                                 currentTransaction.customerName,
                                 Convert.ToDecimal(currentTransaction.amountOrRate),
-                                currentTransaction.transactionID,
                                 currentTransaction.recipientCustomerNumber,
                                 !currentTransaction.recipientPrimary);
                             break;
@@ -109,193 +103,189 @@ namespace Bank
                                 !currentTransaction.primaryAccount,
                                 Convert.ToDecimal(currentTransaction.amountOrRate),
                                 currentTransaction.recipientCustomerNumber, // Originating ID = from
-                                !currentTransaction.recipientPrimary,
-                                currentTransaction.transactionID);
+                                !currentTransaction.recipientPrimary);
                             break;
                         case 'E':
-                            SwapAccounts(currentTransaction.customerNumber,
-                                currentTransaction.transactionID);
+                            SwapAccounts(currentTransaction.customerNumber);
                             break;
                         case 'M':
-                            MonthEndProcessing(currentTransaction.transactionID);
+                            MonthEndProcessing();
                             break;
                         case 'R':
                             ChangeAnnualPercentageRate(currentTransaction.customerNumber,
                                 !currentTransaction.primaryAccount,
-                                Convert.ToDecimal(currentTransaction.amountOrRate),
-                                currentTransaction.transactionID);
+                                Convert.ToDecimal(currentTransaction.amountOrRate));
                             break;
                         case 'Y':
                             DeleteAccount(currentTransaction.customerNumber,
                                 !currentTransaction.primaryAccount);
                             break;
                         default:
-                            --_numberOfTransactions;
+                            --NumberOfTransactions;
                             break; // Add to Error list if I end up making that
                     }
 
-                    ++_numberOfTransactions;
+                    ++NumberOfTransactions;
                 }
 
             transactionLog.CloseFile(MyFileType.InputFile);
-            return _numberOfTransactions;
+            return NumberOfTransactions;
         }
 
-        private void AddCustomer(string userName, uint userNumber, ulong transactionNumber)
+        private void AddCustomer(string userName, uint userNumber)
         {
-            if (!_customersList.ContainsKey((int) userNumber))
-                _customersList.Add((int) userNumber, new BankCustomer(userNumber, userName));
+            if (!CustomerRepository.ContainsKey((int) userNumber))
+                CustomerRepository.Add((int) userNumber, new BankCustomer(userNumber, userName));
         }
 
-        private void CreateAccount(int userNumber, char accountType, decimal accountInterest, ulong transactionNumber)
+        private void CreateAccount(int userNumber, char accountType, decimal accountInterest)
         {
-            if (_customersList.ContainsKey(userNumber)) _customersList[userNumber].AddAccount(accountType, accountInterest);
+            if (CustomerRepository.ContainsKey(userNumber))
+                CustomerRepository[userNumber].AddAccount(accountType, accountInterest);
         }
 
-        private void ChangeCustomerName(int userNumber, string newUserName, ulong transactionNumber)
+        private void ChangeCustomerName(int userNumber, string newUserName)
         {
-            if (_customersList.ContainsKey(userNumber)) _customersList[userNumber].UserName = newUserName;
+            if (CustomerRepository.ContainsKey(userNumber)) CustomerRepository[userNumber].UserName = newUserName;
         }
 
-        private void LinkAccounts(int userNumber, int originUserNumber, bool originPrimary, ulong transactionNumber)
+        private void LinkAccounts(int userNumber, int originUserNumber, bool originPrimary)
         {
-            if (!_customersList.ContainsKey(userNumber) || !_customersList.ContainsKey(originUserNumber) ||
+            if (!CustomerRepository.ContainsKey(userNumber) || !CustomerRepository.ContainsKey(originUserNumber) ||
                 userNumber == originUserNumber) return;
-            
+
             if (originPrimary)
             {
                 //Linking an Account adds the account to the recipients accounts
-                _customersList[userNumber].AddAccount(_customersList[originUserNumber].PrimaryAccount);
+                CustomerRepository[userNumber].AddAccount(CustomerRepository[originUserNumber].PrimaryAccount);
                 return;
             }
-            
-            _customersList[userNumber].AddAccount(_customersList[originUserNumber].SecondaryAccount);
+
+            CustomerRepository[userNumber].AddAccount(CustomerRepository[originUserNumber].SecondaryAccount);
         }
 
-        private void Deposit(int userNumber, bool primaryAccount, decimal depositAmount, ulong transactionNumber)
+        private void Deposit(int userNumber, bool primaryAccount, decimal depositAmount)
         {
-            if (!_customersList.ContainsKey(userNumber)) return;
+            if (!CustomerRepository.ContainsKey(userNumber)) return;
             if (primaryAccount)
             {
-                _customersList[userNumber].DepositTo(0, depositAmount);
+                CustomerRepository[userNumber].DepositTo(0, depositAmount);
                 return;
             }
-                
-            _customersList[userNumber].DepositTo(1, depositAmount);
+
+            CustomerRepository[userNumber].DepositTo(1, depositAmount);
         }
 
-        private void Withdraw(int userNumber, bool primaryAccount, decimal withdrawAmount, ulong transactionNumber)
+        private void Withdraw(int userNumber, bool primaryAccount, decimal withdrawAmount)
         {
-            if (!_customersList.ContainsKey(userNumber)) return;
+            if (!CustomerRepository.ContainsKey(userNumber)) return;
 
             if (primaryAccount)
             {
-                _customersList[userNumber].WithdrawFrom(0, withdrawAmount);
+                CustomerRepository[userNumber].WithdrawFrom(0, withdrawAmount);
                 return;
             }
 
-            _customersList[userNumber].WithdrawFrom(1, withdrawAmount);
+            CustomerRepository[userNumber].WithdrawFrom(1, withdrawAmount);
         }
 
         private void Transfer(int userNumber, bool primaryAccount, decimal transferAmount, int senderNumber,
-            bool senderPrimary,
-            ulong transactionNumber)
+            bool senderPrimary)
         {
-            if (!_customersList.ContainsKey(userNumber) || !_customersList.ContainsKey(senderNumber)) return;
+            if (!CustomerRepository.ContainsKey(userNumber) || !CustomerRepository.ContainsKey(senderNumber)) return;
             if (primaryAccount)
             {
-                _customersList[userNumber].TransferBetween(0, transferAmount,
+                CustomerRepository[userNumber].TransferBetween(0, transferAmount,
                     senderPrimary
-                        ? _customersList[senderNumber].PrimaryAccount
-                        : _customersList[senderNumber].SecondaryAccount);
+                        ? CustomerRepository[senderNumber].PrimaryAccount
+                        : CustomerRepository[senderNumber].SecondaryAccount);
                 return;
             }
-            
-            _customersList[userNumber].TransferBetween(1, transferAmount,
+
+            CustomerRepository[userNumber].TransferBetween(1, transferAmount,
                 senderPrimary
-                    ? _customersList[senderNumber].PrimaryAccount
-                    : _customersList[senderNumber].SecondaryAccount);
+                    ? CustomerRepository[senderNumber].PrimaryAccount
+                    : CustomerRepository[senderNumber].SecondaryAccount);
         }
 
-        private void SwapAccounts(int userNumber, ulong transactionNumber)
+        private void SwapAccounts(int userNumber)
         {
-            if (_customersList.ContainsKey(userNumber))
-                _customersList[userNumber].SwapAccounts();
+            if (CustomerRepository.ContainsKey(userNumber))
+                CustomerRepository[userNumber].SwapAccounts();
         }
 
-        private void MonthEndProcessing(ulong transactionNumber)
+        private void MonthEndProcessing()
         {
-            foreach ( var customer in _customersList) customer.Value.PostAccounts(_bankPrimeRate);
-            foreach (var customer in _customersList) customer.Value.EndInterestPosting();
+            foreach (var customer in CustomerRepository) customer.Value.PostAccounts(_bankPrimeRate);
+            foreach (var customer in CustomerRepository) customer.Value.EndInterestPosting();
         }
 
         public void DeleteAccount(int userNumber, bool primaryAccount)
         {
-            if (!_customersList.ContainsKey(userNumber)) return;
-            _customersList[userNumber].DeleteAccount(primaryAccount ? (ushort) 0 : (ushort) 1);
+            if (!CustomerRepository.ContainsKey(userNumber)) return;
+            CustomerRepository[userNumber].DeleteAccount(primaryAccount ? (ushort) 0 : (ushort) 1);
         }
 
-        private void ChangeAnnualPercentageRate(int userNumber, bool primaryAccount, decimal newAnnualPercentageRate,
-            ulong transactionNumber)
+        private void ChangeAnnualPercentageRate(int userNumber, bool primaryAccount, decimal newAnnualPercentageRate)
         {
-            if (userNumber >= _customersList.Count) return;
+            if (userNumber >= CustomerRepository.Count) return;
             if (userNumber == 0)
             {
                 _bankPrimeRate = newAnnualPercentageRate;
                 return;
             }
 
-            if (!_customersList.ContainsKey(userNumber)) return;
+            if (!CustomerRepository.ContainsKey(userNumber)) return;
             if (primaryAccount)
             {
-                
-                _customersList[userNumber].PrimaryAccountAnnualPercentageRate = newAnnualPercentageRate;
+                CustomerRepository[userNumber].PrimaryAccountAnnualPercentageRate = newAnnualPercentageRate;
                 return;
             }
-            
-            _customersList[userNumber].SecondaryAccountAnnualPercentageRate = newAnnualPercentageRate;
+
+            CustomerRepository[userNumber].SecondaryAccountAnnualPercentageRate = newAnnualPercentageRate;
         }
 
-        private void SetPrimeRate(decimal newAnnualPercentageRate, ulong transactionNum)
+        private void SetPrimeRate(decimal newAnnualPercentageRate)
         {
             if (newAnnualPercentageRate > 0) _bankPrimeRate = newAnnualPercentageRate;
         }
 
         private void ProcessCheck(int userNumber, bool primaryAccount, int checkNumber, string toName,
-            decimal checkAmount, ulong transactionNumber, int recipientCustomerNumber, bool recipientPrimary)
+            decimal checkAmount, int recipientCustomerNumber, bool recipientPrimary)
         {
-            if (!_customersList.ContainsKey(userNumber)) return;
+            if (!CustomerRepository.ContainsKey(userNumber)) return;
             switch (recipientCustomerNumber)
             {
-                case > 0 when _customersList.ContainsKey(userNumber):
+                case > 0 when CustomerRepository.ContainsKey(userNumber):
                 {
                     if (primaryAccount)
                     {
                         if (recipientPrimary)
-                            _customersList[userNumber].ProcessCheck(checkNumber, 0, toName, checkAmount,
-                                _customersList[recipientCustomerNumber].PrimaryAccount,
-                                _customersList[recipientCustomerNumber].SecondaryAccount);
+                            CustomerRepository[userNumber].ProcessCheck(checkNumber, 0, toName, checkAmount,
+                                CustomerRepository[recipientCustomerNumber].PrimaryAccount,
+                                CustomerRepository[recipientCustomerNumber].SecondaryAccount);
                         else
-                            _customersList[userNumber].ProcessCheck(checkNumber, 0, toName, checkAmount,
-                                _customersList[recipientCustomerNumber].PrimaryAccount);
+                            CustomerRepository[userNumber].ProcessCheck(checkNumber, 0, toName, checkAmount,
+                                CustomerRepository[recipientCustomerNumber].PrimaryAccount);
                     }
-                    else 
+                    else
                     {
                         if (recipientPrimary)
-                            _customersList[userNumber].ProcessCheck(checkNumber, 1, toName, checkAmount,
-                                _customersList[recipientCustomerNumber].PrimaryAccount,
-                                _customersList[recipientCustomerNumber].SecondaryAccount);
+                            CustomerRepository[userNumber].ProcessCheck(checkNumber, 1, toName, checkAmount,
+                                CustomerRepository[recipientCustomerNumber].PrimaryAccount,
+                                CustomerRepository[recipientCustomerNumber].SecondaryAccount);
                         else
-                            _customersList[userNumber].ProcessCheck(checkNumber, 1, toName, checkAmount,
-                                _customersList[recipientCustomerNumber].PrimaryAccount);
+                            CustomerRepository[userNumber].ProcessCheck(checkNumber, 1, toName, checkAmount,
+                                CustomerRepository[recipientCustomerNumber].PrimaryAccount);
                     }
 
                     break;
                 }
                 case 0: // This is a global Check, the recipient is not in the system
-                    _customersList[userNumber].ProcessCheck(checkNumber, primaryAccount ? (ushort) 0 : (ushort) 1, toName,
+                    CustomerRepository[userNumber].ProcessCheck(checkNumber, primaryAccount ? (ushort) 0 : (ushort) 1,
+                        toName,
                         checkAmount,
-                        _customersList[recipientCustomerNumber].PrimaryAccount);
+                        CustomerRepository[recipientCustomerNumber].PrimaryAccount);
                     break;
             }
         }
@@ -311,7 +301,9 @@ namespace Bank
             //var barSeparator =
             //"╔════╦══════════════════╦═══╦════╦══════════╦═════╦═══════════╦════╦════╦══════════╦═════╦══════════╗";
             var output = new StringBuilder();
-            var sorted = new SortedDictionary<int, BankCustomer>(_customersList); // Sort the dictionary for output
+            var sorted =
+                new SortedDictionary<int, BankCustomer>(
+                    CustomerRepository); // Sort the dictionary for output based on Id (Key)
 
             //Title Segment
             output.AppendFormat("{0,-50}", "Banking Interface V 2.2 (C#)");
@@ -339,14 +331,28 @@ namespace Bank
                 "╠════╪══════════════════╪════╪═════════════╪═════╪════════════╪═════╪═════════════╪═════╪═══════════╣▒");
 
             // Body Section -  same sizes as above 
-            foreach (var (userIdNumber, customer) in sorted) 
+            foreach (var (userIdNumber, customer) in sorted)
             {
                 output.Append('║');
                 output.AppendFormat("{0,-4}│", userIdNumber);
                 output.AppendFormat("{0,-18}│", customer.UserName.Truncate(18));
+
                 //output.AppendFormat("{0,-3}│", _customersList[i].PrimaryAccount != null ? _customersList[i].GetAccountPrimaryString(0) : "-");
-                output.AppendFormat("{0,-4}│",
-                    customer.PrimaryAccount != null ? customer.GetAccType(0) : "--");
+                var accType = customer.GetAccType(0);
+                var type = accType switch
+                {
+                    AccountType.Checking => "C",
+                    AccountType.Savings => "S",
+                    _ => "--"
+                };
+
+                output.AppendFormat("{0,-4}│", accType switch
+                {
+                    AccountType.Checking => "C",
+                    AccountType.Savings => "S",
+                    _ => "--"
+                });
+                    //customer.PrimaryAccount != null ? customer.GetAccType(0) : "--");
                 output.AppendFormat("{0,-13}│",
                     customer.PrimaryAccount != null
                         ? PriceString(customer.PrimaryAccountBalance)
@@ -358,8 +364,13 @@ namespace Bank
                 output.AppendFormat("{0,-11}", GetLinkedString(userIdNumber, 0));
                 output.AppendFormat("{0,3}", userIdNumber == 1 ? " ╽ " : " ┃ ");
                 //output.AppendFormat("{0,-3}│", _customersList[i].SecondaryAccount != null ? _customersList[i].GetAccountPrimaryString(1) : "-");
-                output.AppendFormat("{0,-4}│",
-                    customer.SecondaryAccount != null ? customer.GetAccType(1) : "--");
+                accType = customer.GetAccType(1);
+                output.AppendFormat("{0,-4}│", accType switch
+                {
+                    AccountType.Checking => "C",
+                    AccountType.Savings => "S",
+                    _ => "--"
+                });
                 output.AppendFormat("{0,-13:}│",
                     customer.SecondaryAccount != null
                         ? PriceString(customer.SecondaryAccountBalance)
@@ -373,7 +384,7 @@ namespace Bank
             }
 
             //Bottom Section
-            var numOfTransactions = "║Number of Transactions: " + _numberOfTransactions;
+            var numOfTransactions = "║Number of Transactions: " + NumberOfTransactions;
             var lengthOfNumber = numOfTransactions.Length;
 
             var totalAssets = $"║Total Assets: {TotalTender():C}";
@@ -407,7 +418,7 @@ namespace Bank
         public decimal TotalTender()
         {
             decimal totalAssets = 0;
-            foreach (var (_, customer) in _customersList)
+            foreach (var (_, customer) in CustomerRepository)
             {
                 // Does not count non master linked accounts to avoid overcount
                 if (customer.PrimaryAccount != null && customer.AccountLinked(0) == 0)
@@ -419,51 +430,93 @@ namespace Bank
             return totalAssets;
         }
 
-        private string GetLinkedString(int userNumber, int accountToTest)
+        public string GetLinkedString(int userNumber, int accountToTest)
         {
-            if (!_customersList.ContainsKey(userNumber)) return string.Empty;
+            if (!CustomerRepository.ContainsKey(userNumber)) return string.Empty;
+            var customer = CustomerRepository[userNumber];
             var output = new StringBuilder();
 
-                CreateLinkedString(output, accountToTest, userNumber);
+            CreateLinkedString(output, customer, accountToTest, userNumber);
 
-                return output.ToString();
+            return output.ToString();
         }
 
 
-        private void CreateLinkedString(StringBuilder builder, int primary, int userNumber)
+        private void CreateLinkedString(StringBuilder builder, BankCustomer customer, int primary, int userNumber)
         {
             switch (primary)
             {
-                case 0: GetPrimaryLinkedString(builder, userNumber);
+                case 0:
+                    GetPrimaryLinkedString(builder, customer, userNumber);
                     break;
-                case 1: GetSecondaryLinkedString(builder, userNumber);
+                case 1:
+                    GetSecondaryLinkedString(builder, customer, userNumber);
                     break;
                 default: break;
             }
         }
 
-        private void GetSecondaryLinkedString(StringBuilder builder, int userNumber)
+        private void GetSecondaryLinkedString(StringBuilder builder, BankCustomer customer, int userNumber)
         {
-            if (_customersList[userNumber].SecondaryAccount == null)
+            if (customer.SecondaryAccount == null)
             {
                 builder.Append("--");
                 return;
             }
+
             var notUnique = false;
-            foreach (var (userId, customer) in _customersList)
+            foreach (var (userId, currentCustomer) in CustomerRepository)
             {
                 if (userId == userNumber) continue; // Linked accs should not be from the users acc so can skip
-                notUnique = customer.NotUniqueAccount(_customersList[userNumber].SecondaryAccount);
+                notUnique = currentCustomer.NotUniqueAccount(customer.SecondaryAccount);
                 if (notUnique) break;
             }
 
             if (notUnique)
             {
-                var master = _customersList[userNumber].AccountLinked(1);
+                var master = customer.AccountLinked(1);
                 if (master == uint.MaxValue) return;
                 builder.AppendFormat("{0}", master == 0 ? "Yes: Master" : $"Yes-({master}) ");
                 if (master == 0) return;
-                var s = _customersList[userNumber].SecondaryAccount == _customersList[(int) master].PrimaryAccount;
+                if (!CustomerRepository.ContainsKey((int) master))
+                {
+                    var s = customer.SecondaryAccount == CustomerRepository[(int) master].PrimaryAccount;
+                    builder.AppendFormat("{0}", s ? "P" : "S");
+                    return;
+                }
+
+                builder.AppendFormat("{0}", "E");
+            }
+            else
+            {
+                builder.Append("No");
+            }
+        }
+
+        private void GetPrimaryLinkedString(StringBuilder builder, BankCustomer customer, int userNumber)
+        {
+            if (CustomerRepository[userNumber].PrimaryAccount == null)
+            {
+                builder.Append("--");
+                return;
+            }
+
+            var notUnique = false;
+            foreach (var (userId, currentCustomer) in CustomerRepository)
+            {
+                if (userId == userNumber) continue; // Linked accs should not be from the users acc so can skip
+                notUnique = currentCustomer.NotUniqueAccount(CustomerRepository[userNumber].PrimaryAccount);
+                if (notUnique) break;
+            }
+
+            if (notUnique)
+            {
+                var master = CustomerRepository[userNumber].AccountLinked(0);
+                if (master == uint.MaxValue) return;
+                builder.AppendFormat("{0}", master == 0 ? "Yes: Master" : $"Yes-({master}) ");
+
+                if (master == 0) return;
+                var s = CustomerRepository[userNumber].PrimaryAccount == CustomerRepository[(int) master].PrimaryAccount;
                 builder.AppendFormat("{0}", s ? "P" : "S");
             }
             else
@@ -472,39 +525,7 @@ namespace Bank
             }
         }
 
-        private void GetPrimaryLinkedString(StringBuilder builder, int userNumber)
-        {
-            
-            if (_customersList[userNumber].PrimaryAccount == null)
-            {
-                builder.Append("--");
-                return;
-            }
-            var notUnique = false;
-            foreach (var (userId, customer) in _customersList)
-            {
-                if (userId == userNumber) continue; // Linked accs should not be from the users acc so can skip
-                notUnique = customer.NotUniqueAccount(_customersList[userNumber].PrimaryAccount);
-                if (notUnique) break;
-            }
 
-            if (notUnique)
-            {
-                var master = _customersList[userNumber].AccountLinked(0);
-                if (master == uint.MaxValue) return;
-                builder.AppendFormat("{0}", master == 0 ? "Yes: Master" : $"Yes-({master}) ");
-
-                if (master == 0) return;
-                var s = _customersList[userNumber].PrimaryAccount == _customersList[(int) master].PrimaryAccount;
-                builder.AppendFormat("{0}", s ? "P" : "S");
-            }
-            else
-            {
-                builder.Append("No");
-            }
-        }
-
-        
         private string AddTransactionIdToDetail(ulong transactionID)
         {
             return ($"{transactionID}|".PadLeft(5, '|'));
