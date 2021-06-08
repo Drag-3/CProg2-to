@@ -138,7 +138,6 @@ namespace BankConsole
             var table = new PrettyTable("|", ConsoleColor.Gray, headers);
             var customerList = bank.CustomerRepository.Select(x => x.Value)
                                                                                 .OrderBy(x => x.UserIdNumber).ToList();
-
             var rows = new List<object>();
             foreach (var customer in customerList)
             {
