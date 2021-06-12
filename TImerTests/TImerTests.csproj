@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\FinancialAud\FinancialAud.csproj" />
+      <ProjectReference Include="..\FinancialAudit\FinancialAudit.csproj" />
     </ItemGroup>
 
     <ItemGroup>

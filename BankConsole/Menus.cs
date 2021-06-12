@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Xml;
-using Bank;
-using Bank.Extentions;
+using FinancialAudit.Bank;
+using FinancialAudit.Extentions;
 using PrettyConsoleHelper;
 
 namespace BankConsole
@@ -19,11 +17,11 @@ namespace BankConsole
             return output.ToString();
         }
 
-        public static string PrintFinalState(Bank.Bank bank)
+        public static string PrintFinalState(Bank bank)
         {
             {
                 var output = new StringBuilder();
-                var sorted = new SortedDictionary<int, BankCustomer>(bank.CustomerRepository); // Sort the dictionary for output or maybe use linq
+                var sorted = new SortedDictionary<int, Customer>(bank.CustomerRepository); // Sort the dictionary for output or maybe use linq
 
                 //Title Segment
                 output.AppendFormat("{0,-50}", "Banking Interface V 2.2 (C#)");
@@ -59,7 +57,7 @@ namespace BankConsole
                     output.AppendFormat("{0,-18}│", customer.UserName.Truncate(18));
 
                     //output.AppendFormat("{0,-3}│", _customersList[i].PrimaryAccount != null ? _customersList[i].GetAccountPrimaryString(0) : "-");
-                    var accType = customer.GetAccType(0);
+                    var accType = customer.GetAccType(AccountLoc.PrimaryAccount);
                 
                     output.AppendFormat("{0,-4}│", accType switch
                     {
@@ -70,7 +68,7 @@ namespace BankConsole
                     //customer.PrimaryAccount != null ? customer.GetAccType(0) : "--");
                     output.AppendFormat("{0,-13}│",
                         customer.PrimaryAccount != null
-                            ? Bank.Bank.PriceString(customer.PrimaryAccountBalance)
+                            ? Bank.PriceString(customer.PrimaryAccountBalance)
                             : "--");
                     output.AppendFormat("{0, -5}│",
                         customer.PrimaryAccount != null
@@ -79,7 +77,7 @@ namespace BankConsole
                     output.AppendFormat("{0,-11}", bank.GetLinkedString(userIdNumber, 0));
                     output.AppendFormat("{0,3}", userIdNumber == 1 ? " ╽ " : " ┃ ");
                     //output.AppendFormat("{0,-3}│", _customersList[i].SecondaryAccount != null ? _customersList[i].GetAccountPrimaryString(1) : "-");
-                    accType = customer.GetAccType(1);
+                    accType = customer.GetAccType(AccountLoc.SecondaryAccount);
                     output.AppendFormat("{0,-4}│", accType switch
                     {
                         AccountType.Checking => "C",
@@ -88,7 +86,7 @@ namespace BankConsole
                     });
                     output.AppendFormat("{0,-13:}│",
                         customer.SecondaryAccount != null
-                            ? Bank.Bank.PriceString(customer.SecondaryAccountBalance)
+                            ? Bank.PriceString(customer.SecondaryAccountBalance)
                             : "--");
                     output.AppendFormat("{0, -5}│",
                         customer.SecondaryAccount != null
@@ -102,7 +100,7 @@ namespace BankConsole
                 var numOfTransactions = "║Number of Transactions: " + bank.NumberOfTransactions;
                 var lengthOfNumber = numOfTransactions.Length;
 
-                var totalAssets = $"║Total Assets: {bank.TotalTender():C}";
+                var totalAssets = $"║Total Assets: {bank.GetTotalTender():C}";
                 var lengthOfAssets = totalAssets.Length;
 
                 var locationOfT = lengthOfAssets > lengthOfNumber ? lengthOfAssets : lengthOfNumber;
@@ -132,7 +130,7 @@ namespace BankConsole
             
         }
 
-        public static void PrintPrettyFinal(Bank.Bank bank)
+        public static void PrintPrettyFinal(Bank bank)
         {
             var headers = new[] {"ID", "Name", "Type", "Balance", "APR", "Linked", "Type", "Balance", "APR", "Linked"};
             var table = new PrettyTable("|", ConsoleColor.Gray, headers);
@@ -143,14 +141,14 @@ namespace BankConsole
             {
                 rows.Add(customer.UserIdNumber);
                 rows.Add(customer.UserName);
-                rows.Add(customer.GetAccType(0));
+                rows.Add(customer.PrimaryAccount);
                 rows.Add(customer.PrimaryAccountBalance);
                 rows.Add(customer.PrimaryAccountAnnualPercentageRate);
-                rows.Add(bank.GetLinkedString((int) customer.UserIdNumber, 0));
-                rows.Add(customer.GetAccType(1));
+                rows.Add(bank.GetLinkedString(customer.UserIdNumber, 0));
+                rows.Add(customer.SecondaryAccount);
                 rows.Add(customer.SecondaryAccountBalance);
                 rows.Add(customer.SecondaryAccountAnnualPercentageRate);
-                rows.Add(bank.GetLinkedString((int) customer.UserIdNumber, 1));
+                rows.Add(bank.GetLinkedString(customer.UserIdNumber, 1));
                 table.AddRow(rows.ToArray());
                 rows.Clear();
             }
