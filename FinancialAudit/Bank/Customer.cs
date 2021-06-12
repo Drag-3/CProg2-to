@@ -430,7 +430,7 @@ namespace FinancialAudit.Bank
             }
             else if (accountToTransfer is CheckingAccount isChecking)
             {
-                success = isChecking.Withdraw(-checkAmount, accountToTransferSecondary);
+                success = accountToTransferSecondary != null ? isChecking.Withdraw(-checkAmount, accountToTransferSecondary) : isChecking.Withdraw(-checkAmount);
                 if (success) _accountList[accountIndex].Deposit(-checkAmount);
                 return success;
             }

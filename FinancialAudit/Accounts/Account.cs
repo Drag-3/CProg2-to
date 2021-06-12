@@ -64,7 +64,7 @@ namespace FinancialAudit.Accounts
         /// <summary>
         /// Deposits the amount to the account
         /// </summary>
-        /// <param name="amt"></param>
+        /// <param name="amt">Amount to deposit</param>
         public void Deposit(decimal amt)
         {
             _cents += (long) (amt * _centPrecision);
@@ -81,7 +81,7 @@ namespace FinancialAudit.Accounts
         /// <summary>
         /// Withdraws the amount from the account is able
         /// </summary>
-        /// <param name="amt"></param>
+        /// <param name="amt">Amount to withdraw</param>
         /// <returns>Success of the withdrawal</returns>
         public virtual bool Withdraw(decimal amt) // Primary Account w/o Sec or Secondary acc
         {
@@ -101,11 +101,15 @@ namespace FinancialAudit.Accounts
         /// <summary>
         /// Tries to withdraw the amount from this account or from secondary if insufficient
         /// </summary>
-        /// <param name="amt"></param>
-        /// <param name="secondary"></param>
-        /// <returns>Success of the withdrawl</returns>
+        /// <param name="amt">Amount to Withdraw</param>
+        /// <param name="secondary">Secondary Account to draw from</param>
+        /// <returns>Success of the withdrawal</returns>
         public virtual bool Withdraw(decimal amt, Account secondary ) // Overload for Accounts w/ Sec
         {
+            if (secondary == null) //if a null value is passed treat it as a normal withdrawal - Maybe add something to let know
+                return Withdraw(amt);
+            
+            
             var amountToWithdraw = (long) amt * _centPrecision;
             var success = false;
             if (_cents - amountToWithdraw < 0)
@@ -131,8 +135,8 @@ namespace FinancialAudit.Accounts
         /// <summary>
         /// If able transfers amount from this account to toTransfer
         /// </summary>
-        /// <param name="amount"></param>
-        /// <param name="toTransfer"></param>
+        /// <param name="amount">Amount to Transfer</param>
+        /// <param name="toTransfer">Account to Transfer To</param>
         /// <returns>Success of the transfer</returns>
         public virtual bool Transfer(decimal amount, Account toTransfer)// Primary Account w/o Sec or Secondary acc
         {
@@ -148,9 +152,9 @@ namespace FinancialAudit.Accounts
         /// <summary>
         /// Tries to transfer money from this account, takes difference from secondary if insufficient.
         /// </summary>
-        /// <param name="amount"></param>
-        /// <param name="secondary"></param>
-        /// <param name="toTransfer"></param>
+        /// <param name="amount">Amount to Transfer</param>
+        /// <param name="secondary">Secondary Account to draw from</param>
+        /// <param name="toTransfer">Account to Transfer to</param>
         /// <returns>Success of the transfer</returns>
         public virtual bool Transfer(decimal amount, Account secondary, Account toTransfer) // Overload for Accounts w/ Sec
         {
@@ -165,10 +169,10 @@ namespace FinancialAudit.Accounts
 
         
         /// <summary>
-        /// Posts Interest on this account
+        /// Posts Interest on this account using prime and stored interest rate
         /// </summary>
         /// <param name="bankPrimeRate">The prime rate of the bank</param>
-        /// <returns></returns>
+        /// <returns>Success of  the posting</returns>
         public abstract bool PostInterest(decimal bankPrimeRate);
 
         /// <summary>
@@ -184,7 +188,7 @@ namespace FinancialAudit.Accounts
         
 
         /// <summary>
-        /// If the entered int does not match owner returns the owner's number else 0
+        /// Compares entered int against owner If it does not match returns the owner's number else 0
         /// </summary>
         /// <param name="toCompare">The user Id to compare against</param>
         /// <returns>entered id is owner - 0 OR

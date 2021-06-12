@@ -133,13 +133,13 @@ namespace FinancialAudit.Bank
             return NumberOfTransactions;
         }
 
-        private void AddCustomer(string userName, int userNumber)
+        public void AddCustomer(string userName, int userNumber)
         {
             if (!CustomerRepository.ContainsKey(userNumber))
                 CustomerRepository.Add(userNumber, new Customer(userNumber, userName));
         }
 
-        private void CreateAccount(int userNumber, char accountType, decimal accountInterest)
+        public void CreateAccount(int userNumber, char accountType, decimal accountInterest)
         {
             if (CustomerRepository.ContainsKey(userNumber))
                 CustomerRepository[userNumber].AddAccount(accountType, accountInterest);
@@ -167,9 +167,11 @@ namespace FinancialAudit.Bank
             CustomerRepository[userNumber].AddAccount(CustomerRepository[originUserNumber].SecondaryAccount);
         }
 
-        private void Deposit(int userNumber, bool primaryAccount, decimal depositAmount)
+        public void Deposit(int userNumber, bool primaryAccount, decimal depositAmount)
         {
-            if (!CustomerRepository.ContainsKey(userNumber)) return;
+            if (!CustomerRepository.ContainsKey(userNumber))
+                return;
+            
             if (primaryAccount)
             {
                 CustomerRepository[userNumber].DepositTo(AccountLoc.PrimaryAccount, depositAmount);
@@ -181,7 +183,9 @@ namespace FinancialAudit.Bank
 
         private void Withdraw(int userNumber, bool primaryAccount, decimal withdrawAmount)
         {
-            if (!CustomerRepository.ContainsKey(userNumber)) return;
+            if (!CustomerRepository.ContainsKey(userNumber))
+                return;
+            
 
             if (primaryAccount)
             {
@@ -195,7 +199,9 @@ namespace FinancialAudit.Bank
         private void Transfer(int userNumber, bool primaryAccount, decimal transferAmount, int senderNumber,
             bool senderPrimary)
         {
-            if (!CustomerRepository.ContainsKey(userNumber) || !CustomerRepository.ContainsKey(senderNumber)) return;
+            if (!CustomerRepository.ContainsKey(userNumber) || !CustomerRepository.ContainsKey(senderNumber))
+                return;
+            
             if (primaryAccount)
             {
                 CustomerRepository[userNumber].TransferBetween(AccountLoc.PrimaryAccount, transferAmount,
@@ -228,7 +234,9 @@ namespace FinancialAudit.Bank
 
         private void DeleteAccount(int userNumber, bool primaryAccount)
         {
-            if (!CustomerRepository.ContainsKey(userNumber)) return;
+            if (!CustomerRepository.ContainsKey(userNumber))
+                return;
+            
             CustomerRepository[userNumber].DeleteAccount(primaryAccount ? AccountLoc.PrimaryAccount : AccountLoc.SecondaryAccount);
         }
 
@@ -262,7 +270,7 @@ namespace FinancialAudit.Bank
                 _bankPrimeRate = newAnnualPercentageRate;
         }
 
-        private void ProcessCheck(int userNumber, bool primaryAccount, int checkNumber, string toName,
+        public void ProcessCheck(int userNumber, bool primaryAccount, int checkNumber, string toName,
             decimal checkAmount, int recipientCustomerNumber, bool recipientPrimary)
         {
             if (!CustomerRepository.ContainsKey(userNumber))
@@ -272,34 +280,48 @@ namespace FinancialAudit.Bank
             {
                 case > 0 when CustomerRepository.ContainsKey(userNumber): // When the recipient # is 0 it is a Global check (Recipient not in bank)
                 {
-                    if (primaryAccount)
-                    {
+                    //if (primaryAccount)
+                    //{
                         if (recipientPrimary)
-                            CustomerRepository[userNumber].ProcessCheck(checkNumber, accountCheckFrom: AccountLoc.PrimaryAccount,toName, checkAmount,
+                            CustomerRepository[userNumber].ProcessCheck(checkNumber,
+                                accountCheckFrom: primaryAccount ? AccountLoc.PrimaryAccount : AccountLoc.SecondaryAccount,
+                                toName,
+                                checkAmount,
                                 CustomerRepository[recipientCustomerNumber].PrimaryAccount,
                                 CustomerRepository[recipientCustomerNumber].SecondaryAccount);
                         else
-                            CustomerRepository[userNumber].ProcessCheck(checkNumber, AccountLoc.PrimaryAccount, toName, checkAmount,
-                                CustomerRepository[recipientCustomerNumber].PrimaryAccount);
-                    }
-                    else
-                    {
+                            CustomerRepository[userNumber].ProcessCheck(checkNumber,
+                                primaryAccount ? AccountLoc.PrimaryAccount : AccountLoc.SecondaryAccount,
+                                toName,
+                                checkAmount,
+                                CustomerRepository[recipientCustomerNumber].SecondaryAccount);
+                    //}
+                    //else
+                    //{
+                    /*
                         if (recipientPrimary)
-                            CustomerRepository[userNumber].ProcessCheck(checkNumber, AccountLoc.SecondaryAccount, toName, checkAmount,
+                            CustomerRepository[userNumber].ProcessCheck(checkNumber,
+                                AccountLoc.SecondaryAccount,
+                                toName,
+                                checkAmount,
                                 CustomerRepository[recipientCustomerNumber].PrimaryAccount,
                                 CustomerRepository[recipientCustomerNumber].SecondaryAccount);
                         else
-                            CustomerRepository[userNumber].ProcessCheck(checkNumber, AccountLoc.SecondaryAccount, toName, checkAmount,
-                                CustomerRepository[recipientCustomerNumber].PrimaryAccount);
-                    }
+                            CustomerRepository[userNumber].ProcessCheck(checkNumber,
+                                AccountLoc.SecondaryAccount,
+                                toName,
+                                checkAmount,
+                                CustomerRepository[recipientCustomerNumber].PrimaryAccount);*/
+                    //}
 
                     break;
                 }
                 case 0: // This is a global Check, the recipient is not in the system
-                    CustomerRepository[userNumber].ProcessCheck(checkNumber, primaryAccount ? AccountLoc.PrimaryAccount : AccountLoc.SecondaryAccount,
-                        toName,
-                        checkAmount,
-                        CustomerRepository[recipientCustomerNumber].PrimaryAccount);
+                    CustomerRepository[userNumber].ProcessCheck(checkNumber,
+                                                                primaryAccount ? AccountLoc.PrimaryAccount : AccountLoc.SecondaryAccount,
+                                                                toName,
+                                                                checkAmount,
+                                                                CustomerRepository[recipientCustomerNumber].PrimaryAccount);
                     break;
             }
         }
