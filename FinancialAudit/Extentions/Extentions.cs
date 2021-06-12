@@ -1,4 +1,4 @@
-﻿namespace Bank.Extentions
+﻿namespace FinancialAudit.Extentions
 {
     public static class Help
     {

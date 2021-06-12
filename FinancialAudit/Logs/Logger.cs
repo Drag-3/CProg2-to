@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
-using TextStreamReader;
+using FinancialAudit.IO;
 
-namespace Bank.Logs
+namespace FinancialAudit.Logs
 {
     public class Logger
     {

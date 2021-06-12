@@ -6,11 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\FinancialAudit\FinancialAudit.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="PrettyConsoleHelper" Version="1.0.2" />
+      <Content Include="bin\Debug\net5.0\log1" />
     </ItemGroup>
 
 </Project>

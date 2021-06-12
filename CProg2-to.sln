@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialAud", "FinancialAud\FinancialAud.csproj", "{EB25CD70-2BBA-457C-81D5-202B9AB37E77}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinancialAudit", "FinancialAudit\FinancialAudit.csproj", "{EB25CD70-2BBA-457C-81D5-202B9AB37E77}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests-", "Tests-\Tests-.csproj", "{AF2A3AB9-FDB6-4572-A647-144026218F9F}"
 EndProject

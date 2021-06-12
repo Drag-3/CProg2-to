@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using TextStreamReader;
+using FinancialAudit.IO;
 
 namespace TimerTests
 {
