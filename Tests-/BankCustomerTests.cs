@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
+using FinancialAudit.Accounts;
 using NUnit.Framework;
-using Bank;
+using FinancialAudit.Bank;
 
 namespace Tests
 {
@@ -12,35 +13,35 @@ namespace Tests
         {
         }
 
-        public BankCustomer SetupOneChecking()
+        public Customer SetupOneChecking()
         {
-            var customer = new BankCustomer(1, "yes");
+            var customer = new Customer(1, "yes");
             customer.AddAccount('C');
             return customer;
         }
-        public BankCustomer SetupOneSavings()
+        public Customer SetupOneSavings()
         {
-            var customer = new BankCustomer(1, "yes");
+            var customer = new Customer(1, "yes");
             customer.AddAccount('S');
             return customer;
         }
-        public BankCustomer SetupCheckings()
+        public Customer SetupCheckings()
         {
-            var customer = new BankCustomer(1, "yes");
+            var customer = new Customer(1, "yes");
             customer.AddAccount('C');
             customer.AddAccount('C');
             return customer;
         }
-        public BankCustomer SetupSavings()
+        public Customer SetupSavings()
         {
-            var customer = new BankCustomer(1, "yes");
+            var customer = new Customer(1, "yes");
             customer.AddAccount('S');
             customer.AddAccount('S');
             return customer;
         }
-        public BankCustomer SetupCheckingSavings()
+        public Customer SetupCheckingSavings()
         {
-            var customer = new BankCustomer(1, "yes");
+            var customer = new Customer(1, "yes");
             customer.AddAccount('C');
             customer.AddAccount('S');
             return customer;
@@ -49,19 +50,19 @@ namespace Tests
         public void CreateSavingsTest()
         {
             var let = SetupOneSavings();
-            Assert.AreEqual(let.PrimaryAccount.GetType(), typeof(Bank.Accounts.SavingsAccount));
+            Assert.AreEqual(let.PrimaryAccount.GetType(), typeof(SavingsAccount));
         }
         [Test]
         public void CreateCheckingTest()
         {
             var let = SetupOneChecking();
-            Assert.AreEqual(let.PrimaryAccount.GetType(), typeof(Bank.Accounts.CheckingAccount));
+            Assert.AreEqual(let.PrimaryAccount.GetType(), typeof(CheckingAccount));
         }
         [Test]
         public void LinkTest()
         {
-            var let = new BankCustomer(1, "One");
-            var accountToLink = new Bank.Accounts.CheckingAccount();
+            var let = new Customer(1, "One");
+            var accountToLink = new CheckingAccount();
             let.AddAccount(accountToLink);
             Assert.AreEqual(accountToLink, let.PrimaryAccount);
         }
@@ -69,7 +70,7 @@ namespace Tests
         public void DepositTest()
         {
             var let = SetupOneChecking();
-            let.DepositTo(0, 12345);
+            let.DepositTo(AccountLoc.PrimaryAccount, 12345);
             Assert.AreEqual(12345, let.PrimaryAccountBalance);
         }
         
@@ -78,7 +79,7 @@ namespace Tests
         {
             var let = SetupOneSavings();
             let.DepositTo(0, 1200);
-            var e  =let.WithdrawFrom(0, 7.3453M);
+            var e  =let.WithdrawFrom(AccountLoc.PrimaryAccount, 7.3453M);
             var solution = 1200 - 7.3453M;
             Assert.True(e);
             Assert.AreEqual(solution, let.PrimaryAccountBalance);
@@ -90,10 +91,10 @@ namespace Tests
         {
             var let = SetupCheckingSavings();
 
-            let.DepositTo(0, 1000);
-            let.DepositTo(1, 1000);
+            let.DepositTo(AccountLoc.PrimaryAccount, 1000);
+            let.DepositTo(AccountLoc.SecondaryAccount, 1000);
 
-            var e =let.WithdrawFrom(0, 510);
+            var e =let.WithdrawFrom(AccountLoc.PrimaryAccount, 510);
             
             Assert.True(e);
             Assert.AreEqual(490, let.PrimaryAccountBalance);
@@ -103,8 +104,8 @@ namespace Tests
         public void InsufficientWithdrawalTest()
         {
             var let = SetupOneChecking();
-            let.DepositTo(0, 5);
-            var e =let.WithdrawFrom(0, 150);
+            let.DepositTo(AccountLoc.PrimaryAccount, 5);
+            var e =let.WithdrawFrom(AccountLoc.PrimaryAccount, 150);
             Assert.False(e);
             Assert.AreEqual(-5, let.PrimaryAccountBalance);
         }
@@ -114,10 +115,10 @@ namespace Tests
         {
             var let = SetupCheckingSavings();
             
-            let.DepositTo(0, 10);
-            let.DepositTo(1, 1000);
+            let.DepositTo(AccountLoc.PrimaryAccount, 10);
+            let.DepositTo(AccountLoc.SecondaryAccount, 1000);
 
-            var e = let.WithdrawFrom(0, 510);
+            var e = let.WithdrawFrom(AccountLoc.PrimaryAccount, 510);
             
             Assert.True(e);
             Assert.AreEqual(0, let.PrimaryAccountBalance);
@@ -129,60 +130,61 @@ namespace Tests
         {
             var let = SetupCheckingSavings();
 
-            let.DepositTo(0, 10);
-            let.DepositTo(1, 1000);
+            let.DepositTo(AccountLoc.PrimaryAccount, 10);
+            let.DepositTo(AccountLoc.SecondaryAccount, 1000);
 
-            var e = let.WithdrawFrom(0, 2000);
+            var e = let.WithdrawFrom(AccountLoc.PrimaryAccount, 2000);
 
+            Assert.False(e);
             Assert.AreEqual(0, let.PrimaryAccountBalance); // Penalty deducted
-            Assert.AreEqual(1000, let.SecondaryAccountBalance); // Unaffecetd
+            Assert.AreEqual(1000, let.SecondaryAccountBalance); // Unaffected
         }
         
         [Test]
-        public void GlobalCheckSenderSufficent()
+        public void GlobalCheckSenderSufficient()
         {
             var let = SetupOneChecking();
             
-            let.DepositTo(0, 1000);
+            let.DepositTo(AccountLoc.PrimaryAccount, 1000);
 
-            var e = let.ProcessCheck(0, 0, "John", 500);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", 500);
             
             Assert.True(e);
             Assert.AreEqual(500, let.PrimaryAccountBalance);
         }
         
         [Test]
-        public void GlobalCheckSenderPrimaryInsuffient()
+        public void GlobalCheckSenderPrimaryInsufficient()
         {
             var let = SetupOneChecking();
             
-            let.DepositTo(0, 5);
+            let.DepositTo(AccountLoc.PrimaryAccount, 5);
 
-            var e = let.ProcessCheck(0, 0, "John", 500);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", 500);
             
             Assert.False(e);
             Assert.AreEqual(-5, let.PrimaryAccountBalance);
         }
         [Test]
-        public void GlobalCheckSenderPrimaryInsuffientSecondarySufficent()
+        public void GlobalCheckSenderPrimaryInsufficientSecondarySufficient()
         {
             var let = SetupCheckingSavings();
             
-            let.DepositTo(1, 1000);
+            let.DepositTo(AccountLoc.SecondaryAccount, 1000);
 
-            var e = let.ProcessCheck(0, 0, "John", 500);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", 500);
             
             Assert.True(e);
             Assert.AreEqual(0, let.PrimaryAccountBalance);
             Assert.AreEqual(500, let.SecondaryAccountBalance);
         }
         [Test]
-        public void GlobalCheckSenderPrimaryInsuffientSecondaryInsufficent()
+        public void GlobalCheckSenderPrimaryInsufficientSecondaryInsufficient()
         {
             var let = SetupCheckingSavings();
             
 
-            var e = let.ProcessCheck(0, 0, "John", 500);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", 500);
             
             Assert.False(e);
             Assert.AreEqual(-10, let.PrimaryAccountBalance);
@@ -190,26 +192,26 @@ namespace Tests
         }
         
         [Test]
-        public void GlobalCheckSenderSufficentSavings()
+        public void GlobalCheckSenderSufficientSavings()
         {
             var let = SetupOneSavings();
             
-            let.DepositTo(0, 1000);
+            let.DepositTo(AccountLoc.PrimaryAccount, 1000);
 
-            var e = let.ProcessCheck(0, 0, "John", 500);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", 500);
             
             Assert.False(e);
             Assert.AreEqual(1000, let.PrimaryAccountBalance);
         }
         
         [Test]
-        public void GlobalCheckSenderSufficentReversed()
+        public void GlobalCheckSenderSufficientReversed()
         {
             var let = SetupOneChecking();
             
-            let.DepositTo(0, 1000);
+            let.DepositTo(AccountLoc.PrimaryAccount, 1000);
 
-            var e = let.ProcessCheck(0, 0, "John", -500);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", -500);
             
             Assert.AreEqual(1500, let.PrimaryAccountBalance);
             Assert.True(e);
@@ -217,25 +219,25 @@ namespace Tests
         }
 
         [Test]
-        public void GlobalCheckSenderSufficentSavingsReversed()
+        public void GlobalCheckSenderSufficientSavingsReversed()
         {
             var let = SetupOneSavings();
             
-            let.DepositTo(0, 1000);
+            let.DepositTo(AccountLoc.PrimaryAccount, 1000);
 
-            var e = let.ProcessCheck(0, 0, "John", -500);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", -500);
             
             Assert.True(e);
             Assert.AreEqual(1500, let.PrimaryAccountBalance); // Savings accounts can accept checks but not send them
         }
         [Test]
-        public void LocalCheckSenderSufficent()
+        public void LocalCheckSenderSufficient()
         {
             var let = SetupOneChecking();
-            var checking = new Bank.Accounts.CheckingAccount();
-            let.DepositTo(0, 1000);
+            var checking = new CheckingAccount();
+            let.DepositTo(AccountLoc.PrimaryAccount, 1000);
 
-            var e = let.ProcessCheck(0, 0, "John", 500, checking);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", 500, checking);
             
             Assert.True(e);
             Assert.AreEqual(500, let.PrimaryAccountBalance);
@@ -243,14 +245,14 @@ namespace Tests
         }
         
         [Test]
-        public void LocalCheckSenderPrimaryInsufficentSecondarySufficent()
+        public void LocalCheckSenderPrimaryInsufficientSecondarySufficient()
         {
             var let = SetupCheckingSavings();
-            var checking = new Bank.Accounts.CheckingAccount();
+            var checking = new CheckingAccount();
             
-            let.DepositTo(1, 1000);
+            let.DepositTo(AccountLoc.SecondaryAccount, 1000);
 
-            var e = let.ProcessCheck(0, 0, "John", 500, checking);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", 500, checking);
             
             Assert.True(e);
             Assert.AreEqual(0, let.PrimaryAccountBalance);
@@ -259,13 +261,13 @@ namespace Tests
         }
         
         [Test]
-        public void LocalCheckSenderPrimaryInsufficentSecondaryInsufficent()
+        public void LocalCheckSenderPrimaryInsufficientSecondaryInsufficient()
         {
             var let = SetupCheckingSavings();
-            var checking = new Bank.Accounts.CheckingAccount();
+            var checking = new CheckingAccount();
             
 
-            var e = let.ProcessCheck(0, 0, "John", 500, checking);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", 500, checking);
             
             Assert.False(e);
             Assert.AreEqual(-10, let.PrimaryAccountBalance);
@@ -274,27 +276,27 @@ namespace Tests
         }
         
         [Test]
-        public void LocalCheckSenderSufficentSavings()
+        public void LocalCheckSenderSufficientSavings()
         {
             var let = SetupOneSavings();
-            var checking = new Bank.Accounts.CheckingAccount();
+            var checking = new CheckingAccount();
             
-            let.DepositTo(0, 1000);
+            let.DepositTo(AccountLoc.PrimaryAccount, 1000);
 
-            var e = let.ProcessCheck(0, 0, "John", 500, checking);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", 500, checking);
             
             Assert.False(e);
             Assert.AreEqual(1000, let.PrimaryAccountBalance);
         }
         
         [Test]
-        public void LocalCheckSenderSufficentReversed()
+        public void LocalCheckSenderSufficientReversed()
         {
             var let = SetupOneChecking();
-            var checking = new Bank.Accounts.CheckingAccount();
+            var checking = new CheckingAccount();
             checking.Deposit(1000);
 
-            var e = let.ProcessCheck(0, 0, "John", -500, checking);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", -500, checking);
             
             Assert.True(e);
             Assert.AreEqual(500, let.PrimaryAccountBalance);
@@ -302,15 +304,15 @@ namespace Tests
         }
         
         [Test]
-        public void LocalCheckSenderPrimaryInsufficentSecondarySufficentReversed()
+        public void LocalCheckSenderPrimaryInsufficientSecondarySufficientReversed()
         {
             var let = SetupCheckingSavings();
-            var checking = new Bank.Accounts.CheckingAccount();
-            var savingsSecondary = new Bank.Accounts.SavingsAccount();
+            var checking = new CheckingAccount();
+            var savingsSecondary = new SavingsAccount();
             
             savingsSecondary.Deposit(1000);
 
-            var e = let.ProcessCheck(0, 0, "John", -500, checking, savingsSecondary);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", -500, checking, savingsSecondary);
             
             Assert.True(e);
             Assert.AreEqual(500, let.PrimaryAccountBalance);
@@ -320,14 +322,14 @@ namespace Tests
         }
         
         [Test]
-        public void LocalCheckSenderPrimaryInsufficentSecondaryInsufficentReversed()
+        public void LocalCheckSenderPrimaryInsufficientSecondaryInsufficientReversed()
         {
             var let = SetupCheckingSavings();
-            var checking = new Bank.Accounts.CheckingAccount();
-            var savingsSecondary = new Bank.Accounts.SavingsAccount();
+            var checking = new CheckingAccount();
+            var savingsSecondary = new SavingsAccount();
             
 
-            var e = let.ProcessCheck(0, 0, "John", -500, checking, savingsSecondary);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", -500, checking, savingsSecondary);
             
             Assert.False(e);
             Assert.AreEqual(0, let.PrimaryAccountBalance);
@@ -337,14 +339,14 @@ namespace Tests
         }
         
         [Test]
-        public void LocalCheckSenderSufficentSavingsReversed()
+        public void LocalCheckSenderSufficientSavingsReversed()
         {
             var let = SetupOneChecking();
-            var savings = new Bank.Accounts.SavingsAccount();
+            var savings = new SavingsAccount();
             
-            let.DepositTo(0, 1000);
+            let.DepositTo(AccountLoc.PrimaryAccount, 1000);
 
-            var e = let.ProcessCheck(0, 0, "John", -500, savings);
+            var e = let.ProcessCheck(0, AccountLoc.PrimaryAccount, "John", -500, savings);
             
             Assert.False(e);
             Assert.AreEqual(1000, let.PrimaryAccountBalance);

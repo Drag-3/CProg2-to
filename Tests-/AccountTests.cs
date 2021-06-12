@@ -1,4 +1,4 @@
-using Bank.Accounts;
+using FinancialAudit.Accounts;
 using NUnit.Framework;
 
 namespace Tests
